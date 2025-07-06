@@ -1,0 +1,10 @@
+# Python virtual environment
+venv/
+myenv/  # (or whatever your env folder is named)
+env/
+.venv/
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.swp
