@@ -1,0 +1,26 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+  "frontend": "next dev",
+  "backend:win": "set FLASK_APP=../backend/app.py&& set FLASK_DEBUG=1&& python -m flask run -p 5000",
+  "backend:linux": "FLASK_APP=../backend/app.py FLASK_DEBUG=1 python3 -m flask run -p 5000",
+  "dev:win": "concurrently \"npm run frontend\" \"npm run backend:win\"",
+  "dev:linux": "concurrently \"npm run frontend\" \"npm run backend:linux\""
+},
+  "dependencies": {
+    "concurrently": "^9.2.0",
+    "next": "15.3.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
