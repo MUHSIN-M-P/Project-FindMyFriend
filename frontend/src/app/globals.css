@@ -4,11 +4,16 @@
   --background: #edcfaa;
   --foreground: #171717;
   --primary: #748873;
+  --secondary: #444444;
 }
 
 @theme inline {
+  /* Mapping css varibale names to tailwind */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --font-bungee: var(--font-bungee);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
