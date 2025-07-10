@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #edcfaa;
+  --background: #EDE0D0;
   --foreground: #171717;
   --primary: #748873;
   --secondary: #444444;
+  --retro_orange: #EDCFAA;
 }
 
 @theme inline {
@@ -13,9 +14,82 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
+  --color-retro_orange: var(--retro_orange);
   --font-bungee: var(--font-bungee);
+  --font-poppins: var(--font-poppins);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+.shadow{
+  border:1px solid var(--secondary);
+  border-bottom: 3px solid var(--secondary);
+  border-right: 3px solid var(--secondary);
+}
+
+.shadow-2{
+  border:1.5px solid var(--secondary);
+  border-bottom: 5px solid var(--secondary);
+  border-right: 4px solid var(--secondary);
+}
+.shadow-3{
+  border:2px solid var(--secondary);
+  border-bottom: 7px solid var(--secondary);
+  border-right: 5px solid var(--secondary);
+}
+
+.shadow-button{
+  border: 1px solid var(--secondary);
+  border-bottom: 4px solid var(--secondary);
+  border-right: 4px solid var(--secondary);
+}
+.shadow-button:active{
+  translate:1px 1px;
+  border-bottom: 2px solid var(--secondary);
+  border-right: 2px solid var(--secondary);
+}
+
+/* src/app/globals.css or src/index.css */
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /*
+    When the element with hide-scrollbar is hovered,
+    make the WebKit scrollbar thumb visible.
+    For Firefox/IE/Edge, scrollbar-width doesn't have a direct equivalent
+    to show on hover easily without a more complex solution (like changing padding/masking).
+    This is the main limitation.
+  */
+  .hide-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3); /* Adjust color as desired */
+    /* Add a transition for a smoother effect */
+    transition: background-color 0.3s ease-in-out;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar-thumb {
+      background-color: transparent; /* Initially transparent */
+  }
+
+  /* Style the scrollbar track (the background of the scrollbar) */
+  .hide-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Define the scrollbar width (for WebKit, Firefox uses scrollbar-width) */
+  .hide-scrollbar::-webkit-scrollbar {
+    width: 8px; /* Width of the vertical scrollbar */
+    height: 8px; /* Height of the horizontal scrollbar */
+  }
 }
 
 /* 

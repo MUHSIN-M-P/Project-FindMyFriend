@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "frontend": "next dev",
-  "backend:win": "set FLASK_APP=../backend/app.py&& set FLASK_DEBUG=1&& python -m flask run -p 5000",
-  "backend:linux": "FLASK_APP=../backend/app.py FLASK_DEBUG=1 python3 -m flask run -p 5000",
-  "dev:win": "concurrently \"npm run frontend\" \"npm run backend:win\"",
-  "dev:linux": "concurrently \"npm run frontend\" \"npm run backend:linux\""
-},
+    "frontend": "next dev",
+    "backend:win": "set FLASK_APP=../backend/app.py&& set FLASK_DEBUG=1&& python -m flask run -p 5000",
+    "backend:linux": "FLASK_APP=../backend/app.py FLASK_DEBUG=1 python3 -m flask run -p 5000",
+    "dev:win": "concurrently \"npm run frontend\" \"npm run backend:win\"",
+    "dev:linux": "concurrently \"npm run frontend\" \"npm run backend:linux\""
+  },
   "dependencies": {
     "concurrently": "^9.2.0",
     "next": "15.3.5",
