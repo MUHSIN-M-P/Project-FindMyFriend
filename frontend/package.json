@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "frontend": "next dev",
-    "backend:win": "set FLASK_APP=../backend/app.py&& set FLASK_DEBUG=1&& python -m flask run -p 5000",
-    "backend:linux": "FLASK_APP=../backend/app.py FLASK_DEBUG=1 python3 -m flask run -p 5000",
+    "backend:win": "cd ../backend && python run.py",
+    "backend:linux": "cd ../backend && python3 run.py",
     "dev:win": "concurrently \"npm run frontend\" \"npm run backend:win\"",
     "dev:linux": "concurrently \"npm run frontend\" \"npm run backend:linux\""
   },
