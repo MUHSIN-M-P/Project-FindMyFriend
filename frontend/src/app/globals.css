@@ -40,13 +40,15 @@
 
 .shadow-button{
   border: 1px solid var(--secondary);
-  border-bottom: 4px solid var(--secondary);
-  border-right: 4px solid var(--secondary);
+  /* box-shadow: [inset | initial | inherit | none] <offset-x> <offset-y> <blur-radius> <spread-radius> <color>; */
+  box-shadow: 4px 4px 0 0 var(--secondary);
+  /* border-bottom: 4px solid var(--secondary); */
+  /* border-right: 4px solid var(--secondary); */
 }
 .shadow-button:active{
-  translate:1px 1px;
-  border-bottom: 2px solid var(--secondary);
-  border-right: 2px solid var(--secondary);
+  translate:1px 2px;
+  transition:all 0.15s ease-in-out;
+  box-shadow: 2px 2px 0 0 var(--secondary);
 }
 
 /* src/app/globals.css or src/index.css */
