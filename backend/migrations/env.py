@@ -18,16 +18,21 @@ if config.config_file_name is not None:
 # --- Custom: Load DB URL from env and import models ---
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# os.path.dirname(__file__): Gets the directory containing the current file.
-# os.path.join(..., '..'): Appends '..' to move up one directory (the parent).
-# os.path.abspath(...): Converts that path to an absolute path.
-# sys.path.append(...): Adds this absolute parent directory to the list of places Python looks for modules.
+# Add the parent directory to the path so we can import from app
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 load_dotenv()
-from database import db
-from models import *
+
+# Import the app and models
+from app.models import db
+from app.models.user import Users
+
 target_metadata = db.metadata
+
+# Set the database URL from environment
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
 
 #==== After load_dotenv()
 database_url = os.getenv("DATABASE_URL")
