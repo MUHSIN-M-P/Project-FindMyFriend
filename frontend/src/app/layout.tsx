@@ -40,17 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bungee.variable} ${poppins.variable} antialiased bg-background hide-scrollbar`}
-      >
-        {/*
-          Wrap NavbarWrapper in Suspense.        <main className="overflow-y-auto hide-scrollbar">
-          {children}
-        </main>
-          Why? usePathname can sometimes be undefined during initial server render
-          or when navigating client-side to a new path. Suspense provides a fallback
-          while the client component hydrates or the path becomes available.
-          It's good practice for client components in server component trees.
-        */}
+        className={`${geistSans.variable} ${geistMono.variable} ${bungee.variable} ${poppins.variable} antialiased bg-background hide-scrollbar`}>
         <Suspense fallback={<div>Loading navigation...</div>}>
           <NavbarWrapper />
         </Suspense>
