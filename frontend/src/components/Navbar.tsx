@@ -27,17 +27,12 @@ const Navbar=({currentPath}:NavbarProps)=>{
                         const isActive = currentPath === link.href;
                         return(
                             <Link key={link.name} href={link.href}>
-                                <RetroButton text={link.name} icon={null} onClick={()=>{}} isActive={isActive} />
+                                <RetroButton text={link.name} icon={null} onClick={() => { } } isActive={isActive} msgNo={0} extraClass={`${isActive?'bg-primary text-white':'text-secondary'}`} />
                             </Link>
                         )
                     })}
                     <Link href='/chat'>
-                        <button className={`py-2 px-5 mx-3 relative rounded-md cursor-pointer font-poppins font-semibold shadow-button ${msgNo>0?'bg-primary text-white':'text-secondary'}`}>
-                                Messages
-                                <div className={`${msgNo==0?'hidden':''} redDot bg-primary p-1 h-6 w-6 border border-secondary rounded-full absolute top-0 right-0 translate-x-2 -translate-y-2 flex justify-center items-center text-white text-sm`}>
-                                    {msgNo}
-                                </div>
-                        </button>
+                        <RetroButton text="Messages" icon={null} onClick={() => { } } isActive={true} msgNo={msgNo} extraClass="" />
                     </Link>
                 </div>
                 <div className="block lg:hidden relative">

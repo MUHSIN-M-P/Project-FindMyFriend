@@ -1,13 +1,14 @@
 import Image from "next/image";
 import search_icon from '../../public/search_icon.svg'
 import Usercard from "@/components/Usercard";
+import RetroButton from "@/components/retroButton";
 export default function Home() {
   const res={
     data:{
       users:[
         {
           id:"001",
-          name:"Ibinu",
+          name:"Ibinu Jaleel",
           age:19,
           gender:"M",
           hobbies:["Movies", "Eating", "Coding"],
@@ -18,7 +19,7 @@ export default function Home() {
         },
         {
           id:"002",
-          name:"Ibinu",
+          name:"Ibinu Jaleel",
           age:19,
           gender:"M",
           hobbies:["Movies", "Eating", "Coding"],
@@ -60,17 +61,14 @@ export default function Home() {
   }
   const notifications=notifications_res.data.notifications;
   return (
-    <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins">
-      <div className="lhs w-full lg:w-[65vw] flex flex-col items-center">
-          <div className="bg-secondary w-full h-[3px]"></div>
-          <div className="searchBar p-5 flex items-center gap-2 md:gap-5 mb-3">
-            <div className="search_boundary shadow-2 flex items-center text-xl gap-4 rounded-xl lg:w-[35vw] h-[3rem] p-3">
+    <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-10 xl:px-20">
+      <div className="lhs w-full lg:w-[65vw] flex flex-col items-center pr-20 border-t-3 border-secondary">
+          <div className="searchBar py-5 w-full flex items-center gap-2 md:gap-5 mb-3">
+            <div className="search_boundary w-full shadow-2 flex items-center text-xl gap-4 rounded-xl h-[3rem] p-3 px-6">
               <Image src={search_icon} alt='magnifying glass' className="object-cover w-5"/>
-              <input type="text" placeholder="Search" className="border-0 w-full h-7 focus:outline-0"/>
+              <input type="text" placeholder="Search" className="border-0 w-full h-7 focus:outline-0 text-sm tracking-wide"/>
             </div>
-            <button className="shadow-button bg-primary rounded-xl py-3 px-1 md:px-3 font-semibold text-white text-sm w-full sm:w-auto">
-              Advanced Search
-            </button>
+            <RetroButton text="Advanced Search" icon={null} onClick={()=>{}} isActive={true} msgNo={0} extraClass="h-full w-fit text-nowrap" />
           </div>
           <div className="flex flex-col w-full items-center gap-[28px]">
             {users.map((user)=>(
