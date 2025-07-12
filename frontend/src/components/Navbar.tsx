@@ -16,13 +16,13 @@ const Navbar=({currentPath}:NavbarProps)=>{
     return(
         <div className="flex">
             <div className="h-[27px]"></div>
-            <nav className="min-h-[10vh] bg-background md:py-[16px] flex items-center justify-around w-full ">
+            <nav className="min-h-[10vh] bg-background md:py-8 flex items-center justify-around w-full ">
                 <Link href='/'>
                     <div className="main_title font-bungee text-2xl md:text-4xl text-secondary cursor-pointer">
                         Find Your Tribe
                     </div>
                 </Link>
-                <div className="navButtons hidden lg:block px-[21px] grow lg:grow-0">
+                <div className="navButtons hidden lg:flex px-[21px] grow lg:grow-0 flex-row">
                     {navLinks.map((link)=>{
                         const isActive = currentPath === link.href;
                         return(
