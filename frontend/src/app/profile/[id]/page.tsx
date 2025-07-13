@@ -10,7 +10,7 @@ export default function Home() {
     data: {
       user:
       {
-        id: "001",
+        id: "1",
         name: "Ibinu Jaleel",
         age: 19,
         gender: "M",

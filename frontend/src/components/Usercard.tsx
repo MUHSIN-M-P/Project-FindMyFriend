@@ -40,7 +40,7 @@ const Usercard=({user}:props)=>{
             </div>
             <div className="btns flex w-full md:w-fit md:flex-col justify-around gap-4 md:gap-[61px] text-secondary">
                 <RetroButton text={`Score: ${user.score}fp`} icon={null} onClick={()=>{}} isActive={false} msgNo={0} extraClass="mx-0! bg-retro_orange w-full" />
-                <Link href={`/chat/${user.id}`}>
+                <Link href={`/chat/${user.id}`} className="mx-0! w-full">
                     <RetroButton text="Connect" icon={"/icons/conn_icon.svg"} onClick={()=>{}} isActive={false} msgNo={0} extraClass="mx-0! w-full" />
                 </Link>
             </div>
