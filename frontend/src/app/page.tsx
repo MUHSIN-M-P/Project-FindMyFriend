@@ -3,6 +3,7 @@ import search_icon from '../../public/search_icon.svg'
 import Usercard from "@/components/Usercard";
 import RetroButton from "@/components/retroButton";
 import YourActivity from "@/components/yourActivity";
+import BottomBar from "@/components/bottomBar";
 export default function Home() {
   const res={
     data:{
@@ -73,7 +74,7 @@ export default function Home() {
   }
   const notifications=notifications_res.data.notifications;
   return (
-    <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-5 md:px-10 xl:px-20 pb-10">
+    <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-5 md:px-10 xl:px-20 pb-20">
       <div className="lhs w-full lg:w-[65vw] flex flex-col items-center lg:pr-20 border-t-3 border-retro_border">
           <div className="searchBar py-5 w-full flex items-center gap-2 md:gap-5 mb-3">
             <div className="search_boundary w-full shadow-2 flex items-center text-xl gap-4 rounded-xl h-[3rem] p-3 px-3 md:px-6">
@@ -92,6 +93,7 @@ export default function Home() {
       <div className="rhs hidden lg:flex lg:w-[35vw] h-fit">
           <YourActivity notifications={notifications}/>
       </div>
+      <BottomBar/>
     </div> 
   );
 }
