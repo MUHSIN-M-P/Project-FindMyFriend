@@ -36,9 +36,9 @@ const Navbar=({currentPath}:NavbarProps)=>{
                     </Link>
                 </div>
                 <div className="block lg:hidden relative">
-                    <div className="flex items-center gap-5">
-                        <img src="/icons/heart_outline.svg" alt="heart h-8" />
-                        <img src="/icons/msg_icon.svg" alt="paper_plane" className="object-contain h-8" />
+                    <div className="flex items-center gap-3">
+                        <img src="/icons/heart_outline.svg" alt="heart h-8" width={30}/>
+                        <img src="/icons/msg_icon.svg" alt="paper_plane" className="object-contain h-8" width={30}/>
                         <div className={`${msgNo==0?'hidden':''} redDot bg-primary p-1 h-6 w-6 border border-retro_border rounded-full absolute top-0 right-0 translate-x-2 -translate-y-2 flex justify-center items-center text-white text-sm`}>
                             {msgNo}
                         </div>

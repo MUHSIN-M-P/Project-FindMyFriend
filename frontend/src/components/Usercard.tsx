@@ -18,7 +18,7 @@ interface props{
 
 const Usercard=({user}:props)=>{
     return(
-        <div className={`px-5 md:px-5 py-6 lg:px-7 lg:py-8 font-poppins rounded-3xl shadow-3 flex flex-col w-full justify-between md:flex-row gap-3 items-start md:items-center text-secondary ${user.bestMatch?'bg-primary text-white relative':''}`}>
+        <div className={`px-2 md:px-5 py-6 lg:px-7 lg:py-8 font-poppins rounded-3xl shadow-3 flex flex-col w-full justify-between md:flex-row gap-3 items-start md:items-center text-secondary ${user.bestMatch?'bg-primary text-white relative':''}`}>
             <div className={`bg-background absolute max-w-[167px] w-full max-h-[36px] h-full text-secondary flex justify-center items-center rounded-md shadow font-semibold top-[-18px] left-[36px] ${user.bestMatch?'':'hidden'}`}># BEST MATCH</div>
             <div className="w-full flex justify-center items-center min-w-[80px] min-h-[80px] max-w-[120px] max-h-[120px]">
                 <Image src='/3d_avatar_6.png' alt={`${user.name}_pfp`} width={120} height={120} className="w-full h-full object-contain"/>

@@ -73,10 +73,10 @@ export default function Home() {
   }
   const notifications=notifications_res.data.notifications;
   return (
-    <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-10 xl:px-20 pb-10">
+    <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-5 md:px-10 xl:px-20 pb-10">
       <div className="lhs w-full lg:w-[65vw] flex flex-col items-center lg:pr-20 border-t-3 border-retro_border">
           <div className="searchBar py-5 w-full flex items-center gap-2 md:gap-5 mb-3">
-            <div className="search_boundary w-full shadow-2 flex items-center text-xl gap-4 rounded-xl h-[3rem] p-3 px-6">
+            <div className="search_boundary w-full shadow-2 flex items-center text-xl gap-4 rounded-xl h-[3rem] p-3 px-3 md:px-6">
               <Image src={search_icon} alt='magnifying glass' className="object-cover w-5"/>
               <input type="text" placeholder="Search" className="border-0 w-full h-7 focus:outline-0 text-sm tracking-wide"/>
             </div>
