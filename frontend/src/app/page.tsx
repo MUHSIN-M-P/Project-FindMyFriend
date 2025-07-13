@@ -9,7 +9,7 @@ export default function Home() {
     data:{
       users:[
         {
-          id:"001",
+          id:"1",
           name:"Ibinu Jaleel",
           age:19,
           gender:"M",
@@ -20,7 +20,7 @@ export default function Home() {
           bestMatch:true
         },
         {
-          id:"002",
+          id:"2",
           name:"Ibinu Jaleel",
           age:19,
           gender:"M",
@@ -31,7 +31,7 @@ export default function Home() {
           bestMatch:false
         },
         {
-          id:"003",
+          id:"3",
           name:"Ibinu Jaleel",
           age:19,
           gender:"M",
