@@ -7,6 +7,7 @@
   --secondary: #444444;
   --retro_orange: #EDCFAA;
   --retro_border: #9B9389;
+  --retro_red: #D14D4E;
 }
 
 @theme inline {
@@ -17,6 +18,7 @@
   --color-secondary: var(--secondary);
   --color-retro_orange: var(--retro_orange);
   --color-retro_border: var(--retro_border);
+  --color-retro_red: var(--retro_red);
   --font-bungee: var(--font-bungee);
   --font-poppins: var(--font-poppins);
   --font-sans: var(--font-geist-sans);

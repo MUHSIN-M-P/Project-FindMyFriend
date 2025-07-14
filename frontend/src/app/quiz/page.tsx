@@ -9,19 +9,19 @@ export default function Home() {
     data:{
       questions:[
         {
-          id:"001",
+          id:1,
           question:"How do you prefer to spend your ideal weekend??",
-          options:[{option:"A mix of social time and quiet alone time", value:1}, {option:"A day of socializing with friends", value:2}, {option:"A day of doing something active", value:3}, {option:"A day of relaxing and doing nothing", value:4}, {option:"A day of learning something new", value:5}],
+          options:[{option:"A mix of social time and quiet alone time", value:1, isSelected:false}, {option:"A day of socializing with friends", value:2, isSelected:false}, {option:"A day of doing something active", value:3, isSelected:false}, {option:"A day of relaxing and doing nothing", value:4, isSelected:false}, {option:"A day of learning something new", value:5, isSelected:false}],
         },
         {
-          id:"002",
+          id:2,
           question:"What is your favorite color?",
-          options:[{option:"Red", value:1}, {option:"Blue", value:2}, {option:"Green", value:3}, {option:"Yellow", value:4}, {option:"Orange", value:5}, {option:"Purple", value:6}],
+          options:[{option:"Red", value:1, isSelected:false}, {option:"Blue", value:2, isSelected:false}, {option:"Green", value:3, isSelected:false}, {option:"Yellow", value:4, isSelected:false}, {option:"Orange", value:5, isSelected:false}, {option:"Purple", value:6, isSelected:false}],
         },
         {
-          id:"003",
+          id:3,
           question:"What is your favorite color?",
-          options:[{option:"Red", value:1}, {option:"Blue", value:2}, {option:"Green", value:3}],
+          options:[{option:"Red", value:1, isSelected:false}, {option:"Blue", value:2, isSelected:false}, {option:"Green", value:3, isSelected:false}],
         }
     ]
     }

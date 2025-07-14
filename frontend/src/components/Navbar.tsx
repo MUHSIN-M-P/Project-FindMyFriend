@@ -10,7 +10,6 @@ const Navbar = ({ currentPath }: NavbarProps) => {
         { name: 'Find', href: '/' },
         { name: 'Questions', href: '/quiz' },
         { name: 'Profile', href: '/profile' },
-        { name: 'Activity', href: '/activity' }
     ];
     const res = { data: { msgNo: 5, notifNo: 1 } }; // await axios.get("___")
     const msgNo = res.data.msgNo;
@@ -39,17 +38,20 @@ const Navbar = ({ currentPath }: NavbarProps) => {
                 </div>
                 <div className="block lg:hidden relative">
                     <div className="flex items-center gap-5">
-                        <Link href='/activity' className="relative">
+                        <Link href='/activity' className={`relative ${(currentPath === '/profile' || currentPath === '/settings') ? 'hidden' : ''}`}>
                             <img src={currentPath === '/activity' ? `/icons/heart_outline.svg` : `/icons/heart_outline_active.svg`} alt="heart h-8" width={30} />
                             <div className={`${notifNo == 0 ? 'hidden' : ''} redDot bg-primary p-1 h-6 w-6 border border-retro_border rounded-full absolute top-0 right-0 translate-x-3 -translate-y-3 flex justify-center items-center text-white text-sm`}>
                                 {notifNo}
                             </div>
                         </Link>
-                        <Link href='/chat'>
+                        <Link href='/chat' className={`relative ${(currentPath === '/profile' || currentPath === '/settings') ? 'hidden' : ''}`}>
                             <img src="/icons/msg_icon.svg" alt="paper_plane" className="object-contain h-8" width={30} />
                             <div className={`${msgNo == 0 ? 'hidden' : ''} redDot bg-primary p-1 h-6 w-6 border border-retro_border rounded-full absolute top-0 right-0 translate-x-2 -translate-y-3 flex justify-center items-center text-white text-sm`}>
                                 {msgNo}
                             </div>
+                        </Link>
+                        <Link href='/settings' className={`relative ${currentPath === '/profile' ? '' : 'hidden'}`}>
+                            <img src="/icons/settings.svg" alt="settings" className="object-contain h-8" width={30} />
                         </Link>
                     </div>
                 </div>
