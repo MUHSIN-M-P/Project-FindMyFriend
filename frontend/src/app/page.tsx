@@ -15,7 +15,7 @@ export default function Home() {
           gender:"M",
           hobbies:["Movies", "Eating", "Coding"],
           desc:"I’m one of those guys who lives to see movies. Not introvert, nor extrovert either. I was th...",
-          pfp_path:"frontend/public/3d_avatar_6.png",
+          pfp_path:"/3d_avatar_6.png",
           score:19,
           bestMatch:true
         },
@@ -26,7 +26,7 @@ export default function Home() {
           gender:"M",
           hobbies:["Movies", "Eating", "Coding"],
           desc:"I’m one of those guys who lives to see movies. Not introvert, nor extrovert either. I was th...",
-          pfp_path:"frontend/public/3d_avatar_6.png",
+          pfp_path:"/3d_avatar_6.png",
           score:18,
           bestMatch:false
         },
@@ -37,7 +37,7 @@ export default function Home() {
           gender:"M",
           hobbies:["Movies", "Eating", "Coding"],
           desc:"I’m one of those guys who lives to see movies. Not introvert, nor extrovert either. I was th...",
-          pfp_path:"frontend/public/3d_avatar_6.png",
+          pfp_path:"/3d_avatar_6.png",
           score:17,
           bestMatch:false
         }
