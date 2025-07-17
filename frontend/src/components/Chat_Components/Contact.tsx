@@ -25,7 +25,7 @@ const Contact = ({contact}:props) => {
                 {contact.latest_msg}
             </div>
         </div>
-        <div className={`${contact.number==0?'hidden':''} absolute right-2 redDot bg-red-500 p-1 h-6 w-6 border border-secondary rounded-full flex justify-center items-center text-white text-sm`}>
+        <div className={`${contact.number==0?'hidden':''} absolute right-2 redDot bg-retro_red p-1 h-6 w-6 border border-retro_border rounded-full flex justify-center items-center text-white text-sm`}>
                 {contact.number}
         </div>
     </div>

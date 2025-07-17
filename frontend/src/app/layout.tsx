@@ -22,7 +22,7 @@ const bungee = Bungee({
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ['100', '200', '300',"400", "500", "600", "700"],
   variable: "--font-poppins",
 });
 
