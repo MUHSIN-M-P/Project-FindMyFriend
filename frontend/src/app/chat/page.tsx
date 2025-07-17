@@ -58,7 +58,63 @@ const page = () => {
           type:"received",
           msg:"what the FUCK ARE YOU SAYING",
           pfp:"/avatars/female_avatar.png"
-        }
+        },
+        {
+          id:'001',
+          type:"received",
+          msg:"Hello",
+          pfp:"/avatars/female_avatar.png"
+        },
+        {
+          id:'002',
+          type:"received",
+          msg:"How are you my niga",
+          pfp:"/avatars/female_avatar.png"
+        },
+        {
+          id:'003',
+          type:"sent",
+          msg:"I am feeling amazing homie for riyal!!!"
+        },
+        {
+          id:'004',
+          type:"sent",
+          msg:"Three months of vacation is killing me vroo, like wtf was the administration thinking I can give birth to a baby in 3 months"
+        },
+        {
+          id:'005',
+          type:"received",
+          msg:"what the FUCK ARE YOU SAYING",
+          pfp:"/avatars/female_avatar.png"
+        },
+        {
+          id:'001',
+          type:"received",
+          msg:"Hello",
+          pfp:"/avatars/female_avatar.png"
+        },
+        {
+          id:'002',
+          type:"received",
+          msg:"How are you my niga",
+          pfp:"/avatars/female_avatar.png"
+        },
+        {
+          id:'003',
+          type:"sent",
+          msg:"I am feeling amazing homie for riyal!!!"
+        },
+        {
+          id:'004',
+          type:"sent",
+          msg:"Three months of vacation is killing me vroo, like wtf was the administration thinking I can give birth to a baby in 3 months"
+        },
+        {
+          id:'005',
+          type:"received",
+          msg:"what the FUCK ARE YOU SAYING",
+          pfp:"/avatars/female_avatar.png"
+        },
       ]
     }
   };
@@ -80,7 +136,7 @@ const page = () => {
   const inputRef = useRef<HTMLInputElement>(null); 
 
   return (
-    <div className="flex flex-col w-screen h-screen overflow-hidden">
+    <div className="flex flex-col w-screen overflow-hidden">
       <div className="h-[3px] bg-retro_border w-full"></div>
       <div className="flex h-full w-screen">
         <div className="contacts md:w-[30vw] lg:w-[25vw]">
@@ -98,22 +154,24 @@ const page = () => {
           <div className="flex items-center border-b-3 border-retro_border w-full py-2 px-3 gap-4">
             {theirPfp? <Image src={theirPfp} alt='their_pfp' width={20} height={20} className="object-contain h-full w-auto"/> : null}
             <div className="flex flex-col">
-              <p>{name}</p>
+              <p className="text-xl">{name}</p>
               <p>{lastOnlineMsg}</p>
             </div>
           </div>
-          <div className="flex flex-col px-5">
+          <div className="flex flex-col-reverse px-5 h-[70vh] overflow-y-scroll">
+            <div className="flex flex-col">
             {messages.map((message)=>(
               <Message key={message.id} message={message} pfp={theirPfp}/>
             ))}
+            </div>
           </div>
-          <div className="fixed bottom-0 self-center">
+          <div className="bottom-0 self-center">
           <div className="flex justify-center items-center p-5 font-poppins">
               <EmojiButtonPicker
                   onChange={setInputValue}
                   inputRef={inputRef} // Pass the input ref to the EmojiButtonPicker
               />
-            <div className="flex items-center gap-3 rounded-full bg-primary/30 lg:w-[50vw]">
+            <div className="flex items-center gap-3 rounded-full bg-primary/30 lg:w-[50vw] ">
                 <input
                     type="text"
                     ref={inputRef} // Assign the ref to the input
