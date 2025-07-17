@@ -139,7 +139,7 @@ const page = () => {
     <div className="flex flex-col w-screen overflow-hidden">
       <div className="h-[3px] bg-retro_border w-full"></div>
       <div className="flex h-full w-screen">
-        <div className="contacts md:w-[30vw] lg:w-[25vw]">
+        <div className="contacts hidden md:block md:w-[30vw] lg:w-[25vw]">
           <Link href='/'>
             <div className="flex items-center gap-2 text-3xl py-2 px-3 font-poppins font-extralight text-secondary my-3">
               <Image src={back_arrow} alt='back_arrow' className="w-4"></Image>
@@ -158,7 +158,7 @@ const page = () => {
               <p>{lastOnlineMsg}</p>
             </div>
           </div>
-          <div className="flex flex-col-reverse px-5 h-[70vh] overflow-y-scroll">
+          <div className="group h-[70vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent transition-all duration-300 px-5 flex flex-col-reverse">
             <div className="flex flex-col">
             {messages.map((message)=>(
               <Message key={message.id} message={message} pfp={theirPfp}/>
