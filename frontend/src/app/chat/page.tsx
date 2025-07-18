@@ -15,6 +15,8 @@ interface social_links{
 
 const page = () => {
   const [InputValue, setInputValue] = useState<string>('');
+  const [showContacts, setShowContacts]=useState<Boolean>(true);
+  const [showChat, setShowChat]=useState<Boolean>(true);
   const [showProfile, setShowProfile]=useState<Boolean>(true);
   const inputRef = useRef<HTMLInputElement>(null); 
 
@@ -202,57 +204,75 @@ const page = () => {
     )
   }
 
+  const contacts_tab=()=>{
+    return(
+      <div className="contacts hidden md:block md:min-w-[30vw] lg:w-[25vw] border-r-3 border-retro_border">
+      <Link href='/'>
+        <div className="flex items-center gap-2 text-3xl py-2 px-3 font-poppins font-extralight text-secondary my-3">
+          <Image src={back_arrow} alt='back_arrow' className="w-4"></Image>
+           Back
+        </div>
+      </Link>
+      {contacts.map((contact)=>(
+        <div onClick={()=>setShowChat(true)}>
+          <Contact key={contact.id} contact={contact}/>
+        </div>
+      ))}
+    </div>
+    )
+  }
+
+  const chat_tab=()=>{
+    return(
+      <div className="chat w-full flex flex-col border-r-3 border-retro_border relative">
+      <div className="flex items-center border-b-3 border-retro_border w-full py-2 px-3 gap-4 cursor-pointer">
+        <div className="header lg:hidden" onClick={()=>{
+            setShowChat(false);
+          }}>
+          <Image src={back_arrow} alt='back_arrow' className="w-4"/>
+        </div>
+        {pfp? <Image src={pfp} alt='their_pfp' width={20} height={20} className="object-contain h-full w-auto"/> : null}
+        <div className="flex flex-col" onClick={()=>setShowProfile(true)}>
+          <p className="text-xl">{name}</p>
+          <p>{lastOnlineMsg}</p>
+        </div>
+      </div>
+      <div className="group h-[72vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent transition-all duration-300 px-5 flex flex-col-reverse">
+        <div className="flex flex-col">
+        {messages.map((message)=>(
+          <Message key={message.id} message={message} pfp={pfp}/>
+        ))}
+        </div>
+      </div>
+      <div className="bottom-0 self-center">
+      <div className="flex justify-center items-center py-2 px-5 font-poppins">
+          <EmojiButtonPicker
+              onChange={setInputValue}
+              inputRef={inputRef} // Pass the input ref to the EmojiButtonPicker
+          />
+        <div className="flex items-center gap-3 rounded-full bg-primary/30 lg:w-[50vw] ">
+            <input
+                type="text"
+                ref={inputRef} // Assign the ref to the input
+                className="flex-grow p-3 rounded-lg text-base outline-none"
+                placeholder="Type something..."
+                value={InputValue}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
+            />
+            <img src="/icons/send_icon.png" alt="" />
+        </div>
+    </div>
+      </div>
+    </div>
+    )
+  }
 
   return (
     <div className="flex flex-col w-screen overflow-hidden">
       <div className="h-[3px] bg-retro_border w-full"></div>
-      <div className="flex h-full w-screen">
-        <div className="contacts hidden md:block md:w-[30vw] lg:w-[25vw]">
-          <Link href='/'>
-            <div className="flex items-center gap-2 text-3xl py-2 px-3 font-poppins font-extralight text-secondary my-3">
-              <Image src={back_arrow} alt='back_arrow' className="w-4"></Image>
-               Back
-            </div>
-          </Link>
-          {contacts.map((contact)=>(
-            <Contact key={contact.id} contact={contact}/>
-          ))}
-        </div>
-        <div className="chat w-full flex flex-col border-x-3 border-retro_border relative">
-          <div className="flex items-center border-b-3 border-retro_border w-full py-2 px-3 gap-4 cursor-pointer" onClick={()=>setShowProfile(true)}>
-            {pfp? <Image src={pfp} alt='their_pfp' width={20} height={20} className="object-contain h-full w-auto"/> : null}
-            <div className="flex flex-col">
-              <p className="text-xl">{name}</p>
-              <p>{lastOnlineMsg}</p>
-            </div>
-          </div>
-          <div className="group h-[72vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent transition-all duration-300 px-5 flex flex-col-reverse">
-            <div className="flex flex-col">
-            {messages.map((message)=>(
-              <Message key={message.id} message={message} pfp={pfp}/>
-            ))}
-            </div>
-          </div>
-          <div className="bottom-0 self-center">
-          <div className="flex justify-center items-center py-2 px-5 font-poppins">
-              <EmojiButtonPicker
-                  onChange={setInputValue}
-                  inputRef={inputRef} // Pass the input ref to the EmojiButtonPicker
-              />
-            <div className="flex items-center gap-3 rounded-full bg-primary/30 lg:w-[50vw] ">
-                <input
-                    type="text"
-                    ref={inputRef} // Assign the ref to the input
-                    className="flex-grow p-3 rounded-lg text-base outline-none"
-                    placeholder="Type something..."
-                    value={InputValue}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
-                />
-                <img src="/icons/send_icon.png" alt="" />
-            </div>
-        </div>
-          </div>
-        </div>
+      <div className="flex flex-grow h-full w-screen">
+        {showContacts && contacts_tab()}
+        {showChat && chat_tab()}
         {showProfile && profile()}
       </div>
     </div>

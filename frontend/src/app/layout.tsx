@@ -40,11 +40,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bungee.variable} ${poppins.variable} antialiased bg-background hide-scrollbar`}>
+        className={`${geistSans.variable} ${geistMono.variable} ${bungee.variable} ${poppins.variable} antialiased bg-background hide-scrollbar flex flex-col min-h-screen`}>
         <Suspense fallback={<div>Loading navigation...</div>}>
           <NavbarWrapper />
         </Suspense>
-        <main className="flex justify-center">
+        <main className="flex justify-center flex-grow">
             {children}
         </main>
       </body>
