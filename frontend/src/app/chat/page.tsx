@@ -16,8 +16,8 @@ interface social_links{
 const page = () => {
   const [InputValue, setInputValue] = useState<string>('');
   const [showContacts, setShowContacts]=useState<Boolean>(true);
-  const [showChat, setShowChat]=useState<Boolean>(true);
-  const [showProfile, setShowProfile]=useState<Boolean>(true);
+  const [showChat, setShowChat]=useState<Boolean>(false);
+  const [showProfile, setShowProfile]=useState<Boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null); 
 
   const [name, setName]=useState<string>('');
@@ -167,46 +167,9 @@ const page = () => {
       
   })
   
-
-  const profile=()=>{
-    return(
-      <div className="w-[30vw] font-poppins h-full relative flex flex-col items-center">
-        <div className="header absolute top-2 left-2 lg:hidden" onClick={()=>setShowProfile(false)}>
-          <Image src={back_arrow} alt='back_arrow' className="w-4"/>
-        </div>
-        <div className="flex flex-col items-center py-4 px-3 gap-4 cursor-pointer" onClick={()=>setShowProfile(true)}>
-          {pfp? <Image src={pfp} alt='their_pfp' width={50} height={50} className="object-contain h-[120px] w-auto"/> : null}
-          <div className="flex flex-col gap-2">
-            <p className="text-xl">{`${name} | ${age}${sex}`}</p>
-            <RetroButton text={`score: ${score}fp`} icon={null} onClick={()=>{}} isActive={false} msgNo={0} extraClass="bg-retro_orange"/>
-          </div>
-        </div>
-        <div className="hobbies flex">
-          {hobbies.map((hobby)=>(
-            <RetroButton text={hobby} icon={null} onClick={()=>{}} isActive={false} msgNo={0} extraClass=""/>
-          ))}
-        </div>
-        <div className="socials mt-20">
-          <div className="text-2xl text-center p-5">Socials</div>
-          <div className="buttons flex flex-col items-center gap-3">
-            {socials.map((social)=>(
-              <Link target="_blank" href={social.link}>
-                <RetroButton text={social.name} icon={`icons/${social.name.toLowerCase()}.svg`} msgNo={0} isActive={false} extraClass="bg-retro_orange" onClick={()=>{}}></RetroButton>
-              </Link>
-            ))}
-          </div>
-        </div>
-        <div className="danger_zone flex mt-10">
-          <RetroButton text='Block' icon={null} msgNo={0} isActive={false} extraClass="bg-retro_red text-white" onClick={()=>{}}></RetroButton>
-          <RetroButton text='Report' icon={null} msgNo={0} isActive={false} extraClass="bg-primary text-white" onClick={()=>{}}></RetroButton>
-        </div>
-      </div>
-    )
-  }
-
   const contacts_tab=()=>{
     return(
-      <div className="contacts hidden md:block md:min-w-[30vw] lg:w-[25vw] border-r-3 border-retro_border">
+      <div className="contacts w-full md:min-w-[30vw] lg:min-w-[25vw] border-r-3 border-retro_border">
       <Link href='/'>
         <div className="flex items-center gap-2 text-3xl py-2 px-3 font-poppins font-extralight text-secondary my-3">
           <Image src={back_arrow} alt='back_arrow' className="w-4"></Image>
@@ -224,7 +187,7 @@ const page = () => {
 
   const chat_tab=()=>{
     return(
-      <div className="chat w-full flex flex-col border-r-3 border-retro_border relative">
+      <div className="chat w-full flex flex-col border-r-3 border-retro_border absolute inset-0 sm:relative bg-background">
       <div className="flex items-center border-b-3 border-retro_border w-full py-2 px-3 gap-4 cursor-pointer">
         <div className="header lg:hidden" onClick={()=>{
             setShowChat(false);
@@ -264,6 +227,42 @@ const page = () => {
     </div>
       </div>
     </div>
+    )
+  }
+
+  const profile=()=>{
+    return(
+      <div className="sm:w-[30vw] font-poppins h-full w-full absolute inset-0 bg-background sm:relative flex flex-col items-center">
+        <div className="header absolute top-2 left-2 lg:hidden" onClick={()=>setShowProfile(false)}>
+          <Image src={back_arrow} alt='back_arrow' className="w-4"/>
+        </div>
+        <div className="flex flex-col items-center py-4 px-3 gap-4 cursor-pointer" onClick={()=>setShowProfile(true)}>
+          {pfp? <Image src={pfp} alt='their_pfp' width={50} height={50} className="object-contain h-[120px] w-auto"/> : null}
+          <div className="flex flex-col gap-2">
+            <p className="text-xl">{`${name} | ${age}${sex}`}</p>
+            <RetroButton text={`score: ${score}fp`} icon={null} onClick={()=>{}} isActive={false} msgNo={0} extraClass="bg-retro_orange"/>
+          </div>
+        </div>
+        <div className="hobbies flex">
+          {hobbies.map((hobby)=>(
+            <RetroButton text={hobby} icon={null} onClick={()=>{}} isActive={false} msgNo={0} extraClass=""/>
+          ))}
+        </div>
+        <div className="socials mt-20">
+          <div className="text-2xl text-center p-5">Socials</div>
+          <div className="buttons flex flex-col items-center gap-3">
+            {socials.map((social)=>(
+              <Link target="_blank" href={social.link}>
+                <RetroButton text={social.name} icon={`icons/${social.name.toLowerCase()}.svg`} msgNo={0} isActive={false} extraClass="bg-retro_orange" onClick={()=>{}}></RetroButton>
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="danger_zone flex mt-10">
+          <RetroButton text='Block' icon={null} msgNo={0} isActive={false} extraClass="bg-retro_red text-white" onClick={()=>{}}></RetroButton>
+          <RetroButton text='Report' icon={null} msgNo={0} isActive={false} extraClass="bg-primary text-white" onClick={()=>{}}></RetroButton>
+        </div>
+      </div>
     )
   }
 

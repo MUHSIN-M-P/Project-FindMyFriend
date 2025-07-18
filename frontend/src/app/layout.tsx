@@ -44,7 +44,7 @@ export default function RootLayout({
         <Suspense fallback={<div>Loading navigation...</div>}>
           <NavbarWrapper />
         </Suspense>
-        <main className="flex justify-center flex-grow">
+        <main className="flex justify-center flex-grow relative">
             {children}
         </main>
       </body>
