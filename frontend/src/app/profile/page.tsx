@@ -3,7 +3,6 @@ import Usercard from "@/components/Usercard";
 import RetroButton from "@/components/retroButton";
 import YourActivity from "@/components/yourActivity";
 import QuestionCard from "@/components/questionCard";
-import BottomBar from "@/components/bottomBar";
 import Link from "next/link";
 import Settings from "@/components/settings";
 export default function Home() {
@@ -118,7 +117,6 @@ export default function Home() {
             <div className="rhs hidden lg:flex lg:w-[35vw] h-fit">
                 <Settings />
             </div>
-            <BottomBar />
         </div>
     );
 }

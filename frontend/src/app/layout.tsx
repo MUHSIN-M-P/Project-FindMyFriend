@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono, Bungee, Poppins } from "next/font/google";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavBarWrapper";
+import BottomBar from "@/components/bottomBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
         <main className="flex justify-center flex-grow relative">
             {children}
         </main>
+        <BottomBar/>
       </body>
     </html>
   );

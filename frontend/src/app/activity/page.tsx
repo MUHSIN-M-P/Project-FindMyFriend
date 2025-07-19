@@ -3,7 +3,6 @@ import Usercard from "@/components/Usercard";
 import RetroButton from "@/components/retroButton";
 import YourActivity from "@/components/yourActivity";
 import QuestionCard from "@/components/questionCard";
-import BottomBar from "@/components/bottomBar";
 import Link from "next/link";
 export default function Home() {
   const res = {
@@ -56,7 +55,6 @@ export default function Home() {
   return (
     <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-5 md:px-10 xl:px-20 pb-20">
       <YourActivity notifications={notifications}/>
-      <BottomBar />
     </div>
   );
 }

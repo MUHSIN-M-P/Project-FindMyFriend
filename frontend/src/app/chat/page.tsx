@@ -4,6 +4,7 @@ import Contact from "@/components/Chat_Components/Contact"
 import Message from "@/components/Chat_Components/Message";
 import RetroButton from "@/components/retroButton";
 import EmojiButtonPicker from "@/components/Chat_Components/EmojiButton";
+import BottomBar from "@/components/bottomBar";
 import Link from "next/link";
 import Image from "next/image";
 import back_arrow from '../../../public/icons/back_arrow.png'
@@ -163,13 +164,23 @@ const page = () => {
       setHobbies(res3.data.hobbies);
       setSocials(res3.data.social_links)
       const lastOnlineMins=res3.data.lastOnline;
-      setLastOnlineMsg(`Last online ${lastOnlineMins>=60?`${Math.floor(lastOnlineMins/60)} hours `:''}${lastOnlineMins>=60&&lastOnlineMins%60!=0?'and ':''} ${lastOnlineMins%60!=0?`${lastOnlineMins%60} mins`:''} ago`);
+      setLastOnlineMsg(`online ${lastOnlineMins>=60?`${Math.floor(lastOnlineMins/60)} hours `:''}${lastOnlineMins>=60&&lastOnlineMins%60!=0?'and ':''} ${lastOnlineMins%60!=0?`${lastOnlineMins%60} mins`:''} ago`);
       
-  })
+  },[])
+
+  const handleContactClick=()=>{
+    if (window.matchMedia("(min-width: 640px)").matches) {
+      setShowChat(true);
+      setShowProfile(true);
+    } else {
+      setShowChat(true);
+      // Don't set stateB
+    }
+  }
   
   const contacts_tab=()=>{
     return(
-      <div className="contacts w-full md:min-w-[30vw] lg:min-w-[25vw] border-r-3 border-retro_border">
+      <div className="contacts w-full sm:max-w-[30vw] border-t-3 md:border-t-0 lg:max-w-[20vw] border-r-3 border-retro_border">
       <Link href='/'>
         <div className="flex items-center gap-2 text-3xl py-2 px-3 font-poppins font-extralight text-secondary my-3">
           <Image src={back_arrow} alt='back_arrow' className="w-4"></Image>
@@ -177,8 +188,8 @@ const page = () => {
         </div>
       </Link>
       {contacts.map((contact)=>(
-        <div onClick={()=>setShowChat(true)}>
-          <Contact key={contact.id} contact={contact}/>
+        <div key={contact.id} onClick={handleContactClick} className="cursor-pointer">
+          <Contact contact={contact}/>
         </div>
       ))}
     </div>
@@ -187,8 +198,8 @@ const page = () => {
 
   const chat_tab=()=>{
     return(
-      <div className="chat w-full flex flex-col border-r-3 border-retro_border absolute inset-0 sm:relative bg-background">
-      <div className="flex items-center border-b-3 border-retro_border w-full py-2 px-3 gap-4 cursor-pointer">
+      <div className="chat w-full flex flex-col border-r-3 border-t-3 md:border-t-0 border-retro_border absolute inset-0 sm:relative bg-background">
+      <div className="flex items-center border-b-2 border-retro_border w-full py-2 px-3 gap-4 cursor-pointer">
         <div className="header lg:hidden" onClick={()=>{
             setShowChat(false);
           }}>
@@ -200,31 +211,31 @@ const page = () => {
           <p>{lastOnlineMsg}</p>
         </div>
       </div>
-      <div className="group h-[72vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent transition-all duration-300 px-5 flex flex-col-reverse">
+      <div className="group h-[68vh] md:h-[72vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent transition-all duration-300 px-5 flex flex-col-reverse">
         <div className="flex flex-col">
         {messages.map((message)=>(
           <Message key={message.id} message={message} pfp={pfp}/>
         ))}
         </div>
       </div>
-      <div className="bottom-0 self-center">
-      <div className="flex justify-center items-center py-2 px-5 font-poppins">
+      <div className="bottom-0 self-center w-full">
+        <div className="flex items-center py-2 px-5 font-poppins">
           <EmojiButtonPicker
               onChange={setInputValue}
               inputRef={inputRef} // Pass the input ref to the EmojiButtonPicker
           />
-        <div className="flex items-center gap-3 rounded-full bg-primary/30 lg:w-[50vw] ">
-            <input
-                type="text"
-                ref={inputRef} // Assign the ref to the input
-                className="flex-grow p-3 rounded-lg text-base outline-none"
-                placeholder="Type something..."
-                value={InputValue}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
-            />
-            <img src="/icons/send_icon.png" alt="" />
+          <div className="flex items-center gap-0 sm:gap-3 rounded-full bg-primary/30 w-[80vw] sm:w-[50vw] ">
+              <input
+                  type="text"
+                  ref={inputRef} // Assign the ref to the input
+                  className="p-3 rounded-lg outline-none max-w-[68vw]"
+                  placeholder="Type something..."
+                  value={InputValue}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
+              />
+              <img src="/icons/send_icon.png" alt=""/>
+          </div>
         </div>
-    </div>
       </div>
     </div>
     )
@@ -232,7 +243,7 @@ const page = () => {
 
   const profile=()=>{
     return(
-      <div className="sm:w-[30vw] font-poppins h-full w-full absolute inset-0 bg-background sm:relative flex flex-col items-center">
+      <div className="sm:w-[30vw] font-poppins h-full w-full border-t-3 md:border-t-0 border-retro_border absolute top-0 right-0 left-0 bg-background sm:relative flex flex-col items-center">
         <div className="header absolute top-2 left-2 lg:hidden" onClick={()=>setShowProfile(false)}>
           <Image src={back_arrow} alt='back_arrow' className="w-4"/>
         </div>
@@ -245,14 +256,14 @@ const page = () => {
         </div>
         <div className="hobbies flex">
           {hobbies.map((hobby)=>(
-            <RetroButton text={hobby} icon={null} onClick={()=>{}} isActive={false} msgNo={0} extraClass=""/>
+            <RetroButton key={hobby} text={hobby} icon={null} onClick={()=>{}} isActive={false} msgNo={0} extraClass=""/>
           ))}
         </div>
         <div className="socials mt-20">
           <div className="text-2xl text-center p-5">Socials</div>
           <div className="buttons flex flex-col items-center gap-3">
             {socials.map((social)=>(
-              <Link target="_blank" href={social.link}>
+              <Link target="_blank" href={social.link} key={social.name}>
                 <RetroButton text={social.name} icon={`icons/${social.name.toLowerCase()}.svg`} msgNo={0} isActive={false} extraClass="bg-retro_orange" onClick={()=>{}}></RetroButton>
               </Link>
             ))}
@@ -268,8 +279,8 @@ const page = () => {
 
   return (
     <div className="flex flex-col w-screen overflow-hidden">
-      <div className="h-[3px] bg-retro_border w-full"></div>
-      <div className="flex flex-grow h-full w-screen">
+      <div className="md:h-[3px] bg-retro_border w-full"></div>
+      <div className="flex h-full w-screen">
         {showContacts && contacts_tab()}
         {showChat && chat_tab()}
         {showProfile && profile()}

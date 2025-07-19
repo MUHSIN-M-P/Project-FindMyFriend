@@ -3,7 +3,6 @@ import search_icon from '../../public/search_icon.svg'
 import Usercard from "@/components/Usercard";
 import RetroButton from "@/components/retroButton";
 import YourActivity from "@/components/yourActivity";
-import BottomBar from "@/components/bottomBar";
 export default function Home() {
   const res={
     data:{
@@ -93,7 +92,6 @@ export default function Home() {
       <div className="rhs hidden lg:flex lg:w-[35vw] h-fit">
           <YourActivity notifications={notifications}/>
       </div>
-      <BottomBar/>
     </div> 
   );
 }

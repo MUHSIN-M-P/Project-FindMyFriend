@@ -68,7 +68,6 @@ export default function Home() {
       <div className="rhs hidden lg:flex lg:w-[35vw] h-fit">
           <YourActivity notifications={notifications}/>
       </div>
-      <BottomBar/>
     </div> 
   );
 }

@@ -11,7 +11,7 @@ export default function BottomBar() {
         {name:'Profile', href:'/profile'}
     ];
     return (
-        <div className="flex gap-2 fixed lg:hidden bottom-0 w-full bg-background py-4 border-t border-secondary rounded-t-lg">
+        <div className="flex gap-2 fixed md:hidden bottom-0 w-full bg-background py-4 border-t border-secondary rounded-t-lg">
             <div className="flex grow lg:grow-0 flex-row w-full justify-around">
                 {navLinks.map((link) => {
                     const isActive = pathname === link.href;
