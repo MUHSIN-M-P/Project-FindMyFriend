@@ -169,7 +169,7 @@ const page = () => {
   },[])
 
   const handleContactClick=()=>{
-    if (window.matchMedia("(min-width: 640px)").matches) {
+    if (window.matchMedia("(min-width: 768px)").matches) {
       setShowChat(true);
       setShowProfile(true);
     } else {
@@ -198,7 +198,7 @@ const page = () => {
 
   const chat_tab=()=>{
     return(
-      <div className="chat w-full flex flex-col border-r-3 border-t-3 md:border-t-0 border-retro_border absolute inset-0 sm:relative bg-background">
+      <div className="chat w-full flex flex-col border-r-3 border-t-3 md:border-t-0 border-retro_border absolute inset-0 md:relative bg-background">
       <div className="flex items-center border-b-2 border-retro_border w-full py-2 px-3 gap-4 cursor-pointer">
         <div className="header lg:hidden" onClick={()=>{
             setShowChat(false);
@@ -224,11 +224,11 @@ const page = () => {
               onChange={setInputValue}
               inputRef={inputRef} // Pass the input ref to the EmojiButtonPicker
           />
-          <div className="flex items-center gap-0 sm:gap-3 rounded-full bg-primary/30 w-[80vw] sm:w-[50vw] ">
+          <div className="flex items-center gap-0 sm:gap-3 rounded-full bg-primary/30 w-[80vw] md:w-[50vw] ">
               <input
                   type="text"
                   ref={inputRef} // Assign the ref to the input
-                  className="p-3 rounded-lg outline-none max-w-[68vw]"
+                  className="p-3 rounded-lg outline-none max-w-[78vw] w-full"
                   placeholder="Type something..."
                   value={InputValue}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
@@ -243,7 +243,7 @@ const page = () => {
 
   const profile=()=>{
     return(
-      <div className="sm:w-[30vw] font-poppins h-full w-full border-t-3 md:border-t-0 border-retro_border absolute top-0 right-0 left-0 bg-background sm:relative flex flex-col items-center">
+      <div className="md:w-[30vw] font-poppins h-full w-full border-t-3 md:border-t-0 border-retro_border absolute top-0 right-0 left-0 bg-background md:relative flex flex-col items-center">
         <div className="header absolute top-2 left-2 lg:hidden" onClick={()=>setShowProfile(false)}>
           <Image src={back_arrow} alt='back_arrow' className="w-4"/>
         </div>
