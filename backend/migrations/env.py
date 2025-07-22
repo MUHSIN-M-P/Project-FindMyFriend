@@ -25,16 +25,14 @@ load_dotenv()
 
 # Import the app and models
 from app.models import db
-from app.models.user import Users
+from app.models.user import User
+from app.models.converstaions import Conversations
+from app.models.messages import Messages
+from app.models.message_status import MessageStatus
 
 target_metadata = db.metadata
 
 # Set the database URL from environment
-database_url = os.getenv("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
-
-#==== After load_dotenv()
 database_url = os.getenv("DATABASE_URL")
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)

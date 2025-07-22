@@ -13,9 +13,13 @@ class User(UserMixin, db.Model):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     last_seen: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     
-    created_conversations = relationship("Conversations", back_populates="creator")
-    # sent_messages = relationship("Messages", back_populates="sender")
-    # message_statuses = relationship("MessageStatus", back_populates="user")
+    # Note: conversations_as_sender, conversations_as_receiver, sent_messages, and message_statuses 
+    # are defined as backref in other models
     
     def get_id(self):
+        return str(self.id)
+    
+    def get_conversations(self):
+        """Get all conversations for this user"""
+        return self.conversations_as_sender + self.conversations_as_receiver
         return str(self.id)

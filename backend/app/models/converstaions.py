@@ -1,6 +1,6 @@
 from .database import db
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy import Integer, String, Text, Boolean, DateTime
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, ForeignKey
 from datetime import datetime
 from typing import Optional
 
@@ -8,13 +8,16 @@ from typing import Optional
 class Conversations(db.Model):
     __tablename__ = "conversations"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # For group chats
-    is_group: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    created_by: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    sender_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    receiver_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     
-    # Relationships
-    creator = relationship("User", back_populates="created_conversations")
+    sender = relationship("User", foreign_keys=[sender_id], backref="conversations_as_sender")
+    receiver = relationship("User", foreign_keys=[receiver_id], backref="conversations_as_receiver")
     messages = relationship("Messages", back_populates="conversation", cascade="all, delete-orphan")
+    
+    # Add unique constraint to prevent duplicate conversations
+    __table_args__ = (
+        db.UniqueConstraint('sender_id', 'receiver_id', name='unique_conversation'),
+    )
 
 

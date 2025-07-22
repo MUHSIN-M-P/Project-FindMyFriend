@@ -49,7 +49,8 @@ def login():
             user = AuthService.create_or_get_oauth_user(
                 email=user_info['email'],
                 username=user_info.get('name'),
-                profile_pic=user_info.get('picture')
+                profile_pic=user_info.get('picture'),
+                hosted_domain= user_info.get("hd")
             )
 
             AuthService.update_last_seen(user.id)
