@@ -17,11 +17,11 @@ const Contact = ({contact}:props) => {
         <div className="">
             <Image src={contact.pfp_path} alt={`${contact.name}_pfp`} width={20} height={20} className="w-15"/>
         </div>
-        <div className="flex flex-col truncate font-poppins relative">
+        <div className="flex flex-col truncate font-poppins relative w-full">
             <div className="name text-xl">
                 {contact.name}
             </div>
-            <div className="desc truncate text-sm font-light max-w-[10vw]">
+            <div className="desc text-sm truncate font-light max-w-full">
                 {contact.latest_msg}
             </div>
         </div>
