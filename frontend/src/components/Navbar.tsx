@@ -1,54 +1,58 @@
 'use client'
 import Link from "next/link";
-
-interface NavbarProps{
-    currentPath:string
+import RetroButton from "./retroButton";
+interface NavbarProps {
+    currentPath: string
 }
 
-const Navbar=({currentPath}:NavbarProps)=>{
-    const navLinks=[
-        {name:'Find', href:'/'},
-        {name:'Questions', href:'/quiz'},
-        {name:'Profile', href:'/profile'}
+const Navbar = ({ currentPath }: NavbarProps) => {
+    const navLinks = [
+        { name: 'Find', href: '/' },
+        { name: 'Questions', href: '/quiz' },
+        { name: 'Profile', href: '/profile' },
     ];
-    const res={data:{msgNo:5}}; // await axios.get("___")
-    const msgNo=res.data.msgNo;
-    return(
+    const res = { data: { msgNo: 5, notifNo: 1 } }; // await axios.get("___")
+    const msgNo = res.data.msgNo;
+    const notifNo = res.data.notifNo;
+    return (
         <div className="flex">
             <div className="h-[27px]"></div>
-            <nav className="min-h-[10vh] bg-background md:py-[16px] flex items-center justify-around w-full ">
+            <nav className="min-h-[10vh] bg-background md:py-8 flex items-center justify-around w-full ">
                 <Link href='/'>
                     <div className="main_title font-bungee text-2xl md:text-4xl text-secondary cursor-pointer">
                         Find Your Tribe
                     </div>
                 </Link>
-                <div className="navButtons hidden lg:block px-[21px] grow lg:grow-0">
-                    {navLinks.map((link)=>{
+                <div className="navButtons hidden lg:flex px-[21px] grow lg:grow-0 flex-row">
+                    {navLinks.map((link) => {
                         const isActive = currentPath === link.href;
-                        return(
+                        return (
                             <Link key={link.name} href={link.href}>
-                                <button className={`py-2 px-5 mx-3 rounded-md cursor-pointer font-poppins font-semibold shadow-button ${isActive?'bg-primary text-white':'text-secondary'} `}>
-                                        {link.name}
-                                </button>
+                                <RetroButton text={link.name} icon={null} onClick={() => { }} isActive={isActive} msgNo={0} extraClass={`${isActive ? 'bg-primary text-white' : 'text-secondary'}`} />
                             </Link>
                         )
                     })}
                     <Link href='/chat'>
-                        <button className={`py-2 px-5 mx-3 relative rounded-md cursor-pointer font-poppins font-semibold shadow-button ${msgNo>0?'bg-primary text-white':'text-secondary'}`}>
-                                Messages
-                                <div className={`${msgNo==0?'hidden':''} redDot bg-primary p-1 h-6 w-6 border border-secondary rounded-full absolute top-0 right-0 translate-x-2 -translate-y-2 flex justify-center items-center text-white text-sm`}>
-                                    {msgNo}
-                                </div>
-                        </button>
+                        <RetroButton text="Messages" icon={null} onClick={() => { }} isActive={true} msgNo={msgNo} extraClass="" />
                     </Link>
                 </div>
                 <div className="block lg:hidden relative">
                     <div className="flex items-center gap-5">
-                        <img src="/icons/heart_outline.png" alt="heart h-8" />
-                        <img src="/icons/msg_icon.png" alt="paper_plane" className="object-contain h-8" />
-                        <div className={`${msgNo==0?'hidden':''} redDot bg-primary p-1 h-6 w-6 border border-secondary rounded-full absolute top-0 right-0 translate-x-2 -translate-y-2 flex justify-center items-center text-white text-sm`}>
-                            {msgNo}
-                        </div>
+                        <Link href='/activity' className={`relative ${(currentPath === '/profile' || currentPath === '/settings') ? 'hidden' : ''}`}>
+                            <img src={currentPath === '/activity' ? `/icons/heart_outline.svg` : `/icons/heart_outline_active.svg`} alt="heart h-8" width={30} />
+                            <div className={`${notifNo == 0 ? 'hidden' : ''} redDot bg-primary p-1 h-6 w-6 border border-retro_border rounded-full absolute top-0 right-0 translate-x-3 -translate-y-3 flex justify-center items-center text-white text-sm`}>
+                                {notifNo}
+                            </div>
+                        </Link>
+                        <Link href='/chat' className={`relative ${(currentPath === '/profile' || currentPath === '/settings') ? 'hidden' : ''}`}>
+                            <img src="/icons/msg_icon.svg" alt="paper_plane" className="object-contain h-8" width={30} />
+                            <div className={`${msgNo == 0 ? 'hidden' : ''} redDot bg-primary p-1 h-6 w-6 border border-retro_border rounded-full absolute top-0 right-0 translate-x-2 -translate-y-3 flex justify-center items-center text-white text-sm`}>
+                                {msgNo}
+                            </div>
+                        </Link>
+                        <Link href='/settings' className={`relative ${currentPath === '/profile' ? '' : 'hidden'}`}>
+                            <img src="/icons/settings.svg" alt="settings" className="object-contain h-8" width={30} />
+                        </Link>
                     </div>
                 </div>
             </nav>

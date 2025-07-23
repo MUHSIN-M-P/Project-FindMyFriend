@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin 'tailwind-scrollbar';
 
 :root {
   --background: #EDE0D0;
@@ -6,6 +7,8 @@
   --primary: #748873;
   --secondary: #444444;
   --retro_orange: #EDCFAA;
+  --retro_border: #9B9389;
+  --retro_red: #D14D4E;
 }
 
 @theme inline {
@@ -15,6 +18,8 @@
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-retro_orange: var(--retro_orange);
+  --color-retro_border: var(--retro_border);
+  --color-retro_red: var(--retro_red);
   --font-bungee: var(--font-bungee);
   --font-poppins: var(--font-poppins);
   --font-sans: var(--font-geist-sans);
@@ -41,14 +46,14 @@
 .shadow-button{
   border: 1px solid var(--secondary);
   /* box-shadow: [inset | initial | inherit | none] <offset-x> <offset-y> <blur-radius> <spread-radius> <color>; */
-  box-shadow: 4px 4px 0 0 var(--secondary);
+  box-shadow: 2px 2px 0 0 var(--secondary);
   /* border-bottom: 4px solid var(--secondary); */
   /* border-right: 4px solid var(--secondary); */
 }
-.shadow-button:active{
-  translate:1px 2px;
+.shadow-button:hover{
+  translate:-2px -2px;
   transition:all 0.15s ease-in-out;
-  box-shadow: 2px 2px 0 0 var(--secondary);
+  box-shadow: 4px 4px 0 0 var(--secondary);
 }
 
 /* src/app/globals.css or src/index.css */

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono, Bungee, Poppins } from "next/font/google";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavBarWrapper";
+import BottomBar from "@/components/bottomBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +23,7 @@ const bungee = Bungee({
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: "400",
+  weight: ['100', '200', '300',"400", "500", "600", "700"],
   variable: "--font-poppins",
 });
 
@@ -40,23 +41,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bungee.variable} ${poppins.variable} antialiased bg-background hide-scrollbar`}
-      >
-        {/*
-          Wrap NavbarWrapper in Suspense.        <main className="overflow-y-auto hide-scrollbar">
-          {children}
-        </main>
-          Why? usePathname can sometimes be undefined during initial server render
-          or when navigating client-side to a new path. Suspense provides a fallback
-          while the client component hydrates or the path becomes available.
-          It's good practice for client components in server component trees.
-        */}
+        className={`${geistSans.variable} ${geistMono.variable} ${bungee.variable} ${poppins.variable} antialiased bg-background hide-scrollbar flex flex-col min-h-screen`}>
         <Suspense fallback={<div>Loading navigation...</div>}>
           <NavbarWrapper />
         </Suspense>
-        <main className="flex justify-center">
+        <main className="flex justify-center flex-grow relative">
             {children}
         </main>
+        <BottomBar/>
       </body>
     </html>
   );
