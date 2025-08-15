@@ -1,0 +1,8 @@
+2025-08-15 16:52:35,086 - websockets.server - INFO - server listening on 0.0.0.0:8765
+2025-08-15 16:52:43,000 - __main__ - INFO - Starting WebSocket server on 0.0.0.0:8765
+2025-08-15 16:52:43,001 - __main__ - INFO - Press Ctrl+C to stop the server
+2025-08-15 16:52:43,004 - __main__ - ERROR - WebSocket server error: [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8765): [winerror 10048] only one usage of each socket address (protocol/network address/port) is normally permitted
+2025-08-15 16:53:40,665 - websockets.server - INFO - server listening on 0.0.0.0:8765
+2025-08-15 16:53:48,533 - __main__ - INFO - Starting WebSocket server on 0.0.0.0:8765
+2025-08-15 16:53:48,533 - __main__ - INFO - Press Ctrl+C to stop the server
+2025-08-15 16:53:48,535 - __main__ - ERROR - WebSocket server error: [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8765): [winerror 10048] only one usage of each socket address (protocol/network address/port) is normally permitted

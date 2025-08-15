@@ -8,6 +8,8 @@ import BottomBar from "@/components/bottomBar";
 import Link from "next/link";
 import Image from "next/image";
 import back_arrow from '../../../public/icons/back_arrow.png'
+import { useWebSocket } from "@/hooks/useWebsocket";
+
 
 interface social_links{
   name:string,
@@ -15,6 +17,10 @@ interface social_links{
 }
 
 const page = () => {
+  // const { messages, sendMessage, isConnected } = useWebSocket({
+  //   url: "ws://localhost:8765", // WebSocket server URL
+  // });
+
   const [InputValue, setInputValue] = useState<string>('');
   const [showContacts, setShowContacts]=useState<Boolean>(true);
   const [showChat, setShowChat]=useState<Boolean>(false);
