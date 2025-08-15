@@ -66,3 +66,28 @@ class AuthService:
         except Exception as e:
             db.session.rollback()
             return False
+    
+    @staticmethod
+    def get_last_online_message(user):
+        """Get human-readable last online message for a user"""
+        if not user.last_seen:
+            return "Never seen"
+        
+        now = datetime.utcnow()
+        diff = now - user.last_seen
+        
+        if diff.seconds < 60:
+            return "Online"
+        elif diff.seconds < 3600:  # Less than 1 hour
+            minutes = diff.seconds // 60
+            return f"Last seen {minutes} minute{'s' if minutes > 1 else ''} ago"
+        elif diff.days < 1:  # Less than 1 day
+            hours = diff.seconds // 3600
+            return f"Last seen {hours} hour{'s' if hours > 1 else ''} ago"
+        else:
+            return f"Last seen {diff.days} day{'s' if diff.days > 1 else ''} ago"
+    
+    @staticmethod
+    def get_user_by_id(user_id):
+        """Get user by ID"""
+        return db.session.get(User, user_id)

@@ -2,7 +2,8 @@ from flask import jsonify, request
 from app import app
 from app.models import User, db
 from app.services.chat_service import ChatService
-from app.utils.decorators import authenticate_user
+from app.services.auth_service import AuthService
+from app.utils.decorators import authenticate_user, jwt_required
 from sqlalchemy import select
 
 @app.route("/")
@@ -176,3 +177,97 @@ def send_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+# JWT-based chat routes (moved from chat.py)
+@app.route('/api/chat/contacts', methods=['GET'])
+@jwt_required
+def get_chat_contacts():
+    """Get user's chat contacts with latest messages"""
+    try:
+        user_id = request.jwt_user.id
+        contacts = ChatService.get_user_contacts_with_details(user_id)
+        return jsonify(contacts)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chat/conversation/<int:user_id>', methods=['GET'])
+@jwt_required
+def get_chat_conversation(user_id):
+    """Get conversation messages with a specific user"""
+    try:
+        current_user_id = request.jwt_user.id
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        
+        messages = ChatService.get_conversation_messages_formatted(
+            current_user_id, user_id, page, per_page
+        )
+        return jsonify(messages)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chat/profile/<int:user_id>', methods=['GET'])
+@jwt_required
+def get_chat_user_profile(user_id):
+    """Get user profile for chat"""
+    try:
+        user = AuthService.get_user_by_id(user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+            
+        profile_data = user.to_dict(include_private=False)
+        profile_data["last_online"] = user.last_seen.isoformat() if user.last_seen else None
+        
+        return jsonify(profile_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chat/send', methods=['POST'])
+@jwt_required
+def send_chat_message():
+    """Send a message to another user"""
+    try:
+        data = request.get_json()
+        recipient_id = data.get('recipient_id')
+        content = data.get('content')
+        message_type = data.get('message_type', 'text')
+        
+        if not recipient_id or not content:
+            return jsonify({"error": "Recipient ID and content are required"}), 400
+            
+        message = ChatService.send_message(request.jwt_user.id, recipient_id, content, message_type)
+        
+        if message:
+            return jsonify({
+                "success": True,
+                "message_id": message.id,
+                "timestamp": message.created_at.isoformat()
+            })
+        else:
+            return jsonify({"error": "Failed to send message"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chat/search', methods=['GET'])
+@jwt_required
+def search_chat_users():
+    """Search for users to start conversations"""
+    try:
+        query = request.args.get('q', '').strip()
+        if not query:
+            return jsonify([])
+            
+        results = ChatService.search_users(query, request.jwt_user.id)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chat/online-users', methods=['GET'])
+@jwt_required
+def get_chat_online_users():
+    """Get list of online users from contacts"""
+    try:
+        online_users = ChatService.get_online_contacts(request.jwt_user.id)
+        return jsonify(online_users)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

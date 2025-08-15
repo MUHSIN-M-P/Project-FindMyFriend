@@ -25,7 +25,7 @@ CORS(app, resources={
 from app.routes import auth, api
 from app.websocket.routes import websocket_bp
 
-# Register WebSocket routes
+# Register blueprints
 app.register_blueprint(websocket_bp)
 
 # Initialize WebSocket service

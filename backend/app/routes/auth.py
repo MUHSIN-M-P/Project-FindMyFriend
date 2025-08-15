@@ -5,6 +5,8 @@ from app.services.auth_service import AuthService
 from flask_login import login_required, logout_user, login_user, current_user, LoginManager
 from authlib.integrations.flask_client import OAuth
 from http import HTTPStatus
+import jwt
+import os
 
 login_manager = LoginManager()
 oauth = OAuth()
@@ -56,14 +58,34 @@ def login():
             AuthService.update_last_seen(user.id)
             login_user(user)
 
+            # Generate JWT token for API access
+            secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
+            from datetime import datetime, timedelta
+            expiration = datetime.utcnow() + timedelta(hours=24)
+            
+            jwt_payload = {
+                "user_id": user.id,
+                "exp": expiration,
+                "type": "api"
+            }
+            
+            api_token = jwt.encode(jwt_payload, secret_key, algorithm="HS256")
+
             return jsonify({
                 "success": True,
                 "message": "Login successful",
                 "user": {
                     "id": user.id,
                     "email": user.email,
-                    "username": user.username
-                }
+                    "username": user.username,
+                    "name": user.username,
+                    "pfp_url": user.profile_pic,
+                    "age": user.age,
+                    "sex": user.sex,
+                    "hobbies": user.hobbies,
+                    "bio": user.bio
+                },
+                "token": api_token
             }), 200
 
         except Exception as e:

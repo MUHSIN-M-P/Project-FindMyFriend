@@ -1,6 +1,8 @@
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, desc, func
 from app.models import db, User, Conversations, Messages, MessageStatus
-from typing import List, Optional
+from app.websocket.redis_manager import redis_manager
+from app.services.auth_service import AuthService
+from typing import List, Optional, Dict, Any
 
 class ChatService:
     
@@ -121,5 +123,168 @@ class ChatService:
                 )
             )
         ).scalar_one_or_none()
+
+    @staticmethod
+    def get_user_contacts_with_details(user_id: int) -> List[Dict[str, Any]]:
+        """Get user's chat contacts with latest messages and metadata"""
+        conversations = ChatService.get_user_conversations(user_id)
+        
+        contacts = []
+        for conv in conversations:
+            # Get the other user in conversation
+            other_user = conv.receiver if conv.sender_id == user_id else conv.sender
+            
+            # Get latest message
+            latest_message = db.session.execute(
+                select(Messages)
+                .where(Messages.conversation_id == conv.id)
+                .order_by(desc(Messages.created_at))
+                .limit(1)
+            ).scalar_one_or_none()
+            
+            # Count unread messages
+            unread_count = db.session.execute(
+                select(func.count(MessageStatus.id))
+                .select_from(
+                    Messages.join(MessageStatus, Messages.id == MessageStatus.message_id)
+                )
+                .where(
+                    and_(
+                        Messages.conversation_id == conv.id,
+                        Messages.sender_id != user_id,  # Messages from other user
+                        MessageStatus.recipient_id == user_id,
+                        MessageStatus.status.in_(['delivered', 'sent'])  # Not read yet
+                    )
+                )
+            ).scalar() or 0
+            
+            # Check if user is online
+            is_online = redis_manager.is_user_online(other_user.id)
+            
+            contact_data = {
+                "id": str(other_user.id),
+                "conversation_id": conv.id,
+                "name": other_user.username,
+                "pfp_path": other_user.profile_pic or other_user.pfp_url or "/avatars/male_avatar.png",
+                "latest_msg": latest_message.content if latest_message else "No messages yet",
+                "latest_msg_time": latest_message.created_at.isoformat() if latest_message else None,
+                "unread_count": unread_count,
+                "is_online": is_online,
+                "last_online": AuthService.get_last_online_message(other_user)
+            }
+            
+            contacts.append(contact_data)
+        
+        # Sort by latest message time
+        contacts.sort(key=lambda x: x['latest_msg_time'] or '', reverse=True)
+        return contacts
+    
+    @staticmethod
+    def get_conversation_messages_formatted(current_user_id: int, other_user_id: int, page: int = 1, per_page: int = 50) -> List[Dict[str, Any]]:
+        """Get formatted conversation messages for API response"""
+        conversation = ChatService.get_or_create_conversation(current_user_id, other_user_id)
+        
+        # Get messages with pagination
+        messages_query = (
+            select(Messages)
+            .where(Messages.conversation_id == conversation.id)
+            .order_by(desc(Messages.created_at))
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+        )
+        
+        messages = db.session.execute(messages_query).scalars().all()
+        
+        # Convert to JSON format expected by frontend
+        message_list = []
+        for msg in reversed(messages):  # Reverse to get chronological order
+            message_data = {
+                "id": str(msg.id),
+                "type": "sent" if msg.sender_id == current_user_id else "received",
+                "msg": msg.content,
+                "timestamp": msg.created_at.isoformat(),
+                "message_type": msg.message_type
+            }
+            
+            # Add profile picture for received messages
+            if msg.sender_id != current_user_id:
+                sender = msg.sender
+                message_data["pfp"] = sender.profile_pic or sender.pfp_url or "/avatars/male_avatar.png"
+                
+            message_list.append(message_data)
+        
+        # Mark messages as read
+        ChatService.mark_conversation_messages_as_read(conversation.id, current_user_id)
+        
+        return message_list
+    
+    @staticmethod
+    def mark_conversation_messages_as_read(conversation_id: int, user_id: int):
+        """Mark all unread messages in a conversation as read for a user"""
+        from datetime import datetime
+        
+        unread_statuses = db.session.execute(
+            select(MessageStatus)
+            .join(Messages, MessageStatus.message_id == Messages.id)
+            .where(
+                and_(
+                    Messages.conversation_id == conversation_id,
+                    MessageStatus.recipient_id == user_id,
+                    MessageStatus.status.in_(['delivered', 'sent'])
+                )
+            )
+        ).scalars().all()
+        
+        for status in unread_statuses:
+            status.status = 'read'
+            status.read_at = datetime.utcnow()
+        
+        db.session.commit()
+    
+    @staticmethod
+    def search_users(query: str, current_user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+        """Search for users to start conversations"""
+        users = db.session.execute(
+            select(User)
+            .where(
+                and_(
+                    or_(
+                        User.username.ilike(f'%{query}%'),
+                        User.email.ilike(f'%{query}%')
+                    ),
+                    User.id != current_user_id
+                )
+            )
+            .limit(limit)
+        ).scalars().all()
+        
+        results = []
+        for user in users:
+            results.append({
+                "id": user.id,
+                "name": user.username,
+                "email": user.email,
+                "pfp_path": user.profile_pic or user.pfp_url or "/avatars/male_avatar.png",
+                "is_online": redis_manager.is_user_online(user.id)
+            })
+            
+        return results
+    
+    @staticmethod
+    def get_online_contacts(user_id: int) -> List[Dict[str, Any]]:
+        """Get list of online users from user's contacts"""
+        user_conversations = ChatService.get_user_conversations(user_id)
+        
+        online_users = []
+        for conv in user_conversations:
+            other_user = conv.receiver if conv.sender_id == user_id else conv.sender
+            if redis_manager.is_user_online(other_user.id):
+                online_users.append({
+                    "id": other_user.id,
+                    "name": other_user.username,
+                    "pfp_path": other_user.profile_pic or other_user.pfp_url or "/avatars/male_avatar.png"
+                })
+                
+        return online_users
 
 
