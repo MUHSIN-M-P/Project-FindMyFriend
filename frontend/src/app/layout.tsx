@@ -29,7 +29,7 @@ const poppins = Poppins({
 
 
 export const metadata: Metadata = {
-  title: "Find My Friend",
+  title: "UniSphere",
   description: "Find your tribe :)",
 };
 
