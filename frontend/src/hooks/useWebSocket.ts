@@ -7,6 +7,7 @@ interface Message {
     pfp?: string;
     timestamp: string;
     message_type?: string;
+    sender_id?: number;
 }
 
 interface Contact {
@@ -39,6 +40,8 @@ export function useWebSocket({
     const [connectionStatus, setConnectionStatus] = useState<
         "connecting" | "connected" | "authenticated" | "disconnected"
     >("disconnected");
+    const [retryCount, setRetryCount] = useState(0);
+    const maxRetries = 3;
 
     const connect = useCallback(async () => {
         if (!token) return;
@@ -61,7 +64,10 @@ export function useWebSocket({
 
             const tokenData = await tokenResponse.json();
             const wsToken = tokenData.token;
-            const wsUrl = tokenData.websocket_url || "ws://localhost:8765";
+            const wsUrl =
+                tokenData.websocket_url ||
+                process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
+                "ws://localhost:8765";
 
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
@@ -103,6 +109,7 @@ export function useWebSocket({
                                     timestamp: data.data.created_at,
                                     message_type:
                                         data.data.message_type || "text",
+                                    sender_id: data.data.sender_id,
                                 };
                                 onNewMessage(message);
                             }
@@ -128,23 +135,39 @@ export function useWebSocket({
                 }
             };
 
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+                setConnectionStatus("disconnected");
+
+                // Retry connection
+                if (retryCount < maxRetries) {
+                    setTimeout(() => {
+                        console.log(
+                            `Retrying connection (${
+                                retryCount + 1
+                            }/${maxRetries})...`
+                        );
+                        setRetryCount((prev) => prev + 1);
+                        connect();
+                    }, 2000 * (retryCount + 1)); // Exponential backoff
+                }
+            };
+
             ws.onclose = () => {
                 setIsConnected(false);
                 setIsAuthenticated(false);
                 setUserId(null);
                 setConnectionStatus("disconnected");
                 console.log("Disconnected from WebSocket");
-            };
 
-            ws.onerror = (error) => {
-                console.error("WebSocket error:", error);
-                setConnectionStatus("disconnected");
+                // Reset retry count on clean disconnect
+                setRetryCount(0);
             };
         } catch (error) {
             console.error("Failed to connect to WebSocket:", error);
             setConnectionStatus("disconnected");
         }
-    }, [token, onNewMessage, onContactUpdate]);
+    }, [token, onNewMessage, onContactUpdate, retryCount]);
 
     const disconnect = useCallback(() => {
         if (wsRef.current) {

@@ -26,7 +26,7 @@ interface Contact {
     unread_count: number;
     is_online: boolean;
     last_online: string;
-    number: number; 
+    number: number;
 }
 
 interface MessageType {
@@ -86,22 +86,39 @@ const page = () => {
     } = useWebSocket({
         token: token ?? undefined, // This converts null to undefined
         onNewMessage: (newMessage) => {
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: newMessage.id,
-                    type: "received",
-                    msg: newMessage.msg,
-                    pfp: newMessage.pfp,
-                    timestamp: newMessage.timestamp,
-                },
-            ]);
-
-            // Update latest message in contacts
-            if (selectedContact) {
+            if (
+                selectedContact &&
+                (newMessage.id === selectedContact.id ||
+                    String(newMessage.id) === String(selectedContact.id))
+            ) {
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: newMessage.id,
+                        type: "received",
+                        msg: newMessage.msg,
+                        pfp: newMessage.pfp,
+                        timestamp: newMessage.timestamp,
+                    },
+                ]);
+                // Update latest message in contacts
                 setContacts((prev) =>
                     prev.map((contact) => {
                         if (contact.id === selectedContact.id) {
+                            return {
+                                ...contact,
+                                latest_msg: newMessage.msg,
+                                latest_msg_time: newMessage.timestamp,
+                                unread_count: 0,
+                            };
+                        }
+                        return contact;
+                    })
+                );
+            } else {
+                setContacts((prev) =>
+                    prev.map((contact) => {
+                        if (contact.id === String(newMessage.id)) {
                             return {
                                 ...contact,
                                 latest_msg: newMessage.msg,

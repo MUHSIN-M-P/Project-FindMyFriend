@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
+from app.utils.decorators import jwt_required
 import jwt
 import os
 from datetime import datetime, timedelta
@@ -9,13 +10,13 @@ from app.websocket.redis_manager import redis_manager
 websocket_bp = Blueprint('websocket', __name__, url_prefix='/api/websocket')
 
 @websocket_bp.route('/token', methods=['POST'])
-@login_required
+@jwt_required
 def generate_websocket_token():
     secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
     expiration = datetime.utcnow() + timedelta(hours=24)
     
     payload = {
-        "user_id": current_user.id,
+        "user_id": request.jwt_user.id,
         "exp": expiration,
         "type": "websocket"
     }
@@ -36,7 +37,7 @@ def websocket_status():
     })
 
 @websocket_bp.route('/users/<int:user_id>/online', methods=['GET'])
-@login_required
+@jwt_required
 def check_user_online_status(user_id):
     is_online = websocket_service.is_user_online(user_id)
     return jsonify({
@@ -45,7 +46,7 @@ def check_user_online_status(user_id):
     })
 
 @websocket_bp.route('/users/online', methods=['GET'])
-@login_required
+@jwt_required
 def get_online_users():
     """Get list of all online users from Redis"""
     online_users = websocket_service.get_online_users()
