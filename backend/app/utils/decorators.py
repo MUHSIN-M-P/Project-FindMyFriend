@@ -1,6 +1,9 @@
 from functools import wraps
 from flask import jsonify, request
 from flask_login import current_user
+import jwt
+import os
+from app.models import db, User
 
 def validate_json(f):
     """Decorator to validate JSON requests"""
@@ -39,4 +42,35 @@ def authenticate_user(f):
             return jsonify({"error": "Access denied: You can only access your own data"}), 403
         
         return f(*args, **kwargs)
+    return decorated_function
+
+def jwt_required(f):
+    """Decorator to authenticate users with JWT tokens for API access"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+        
+        token = auth_header.split(' ')[1]
+        secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
+        
+        try:
+            payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+            user_id = payload.get("user_id")
+            
+            if not user_id:
+                return jsonify({"error": "Invalid token payload"}), 401
+                
+            user = db.get_or_404(User, user_id)
+            request.jwt_user = user
+            return f(*args, **kwargs)
+            
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token"}), 401
+        except Exception as e:
+            return jsonify({"error": "Authentication failed"}), 401
+    
     return decorated_function

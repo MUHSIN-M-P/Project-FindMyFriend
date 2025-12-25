@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "frontend": "next dev",
-    "backend:win": "cd ../backend && python run.py",
-    "backend:linux": "cd ../backend && python3 run.py",
+    "backend:win": "cd ..\\backend && ..\\.venv\\Scripts\\python.exe run.py",
+    "backend:linux": "cd ../backend && ../.venv/bin/python run.py",
     "dev:win": "concurrently \"npm run frontend\" \"npm run backend:win\"",
     "dev:linux": "concurrently \"npm run frontend\" \"npm run backend:linux\""
   },

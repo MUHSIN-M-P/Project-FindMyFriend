@@ -23,6 +23,14 @@ CORS(app, resources={
 
 # Import routes AFTER app is created
 from app.routes import auth, api
+from app.websocket.routes import websocket_bp
+
+# Register blueprints
+app.register_blueprint(websocket_bp)
+
+# Initialize WebSocket service
+from app.websocket.service import init_websocket_service
+init_websocket_service(app)
 
 with app.app_context():
     db.create_all()
