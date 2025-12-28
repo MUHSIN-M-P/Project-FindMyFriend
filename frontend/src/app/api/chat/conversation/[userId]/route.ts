@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
-        const authorization = request.headers.get("authorization");
+        const { userId } = await params;
+        const authorizationHeader = request.headers.get("authorization");
+        const cookieToken = request.cookies.get("auth_token")?.value;
+        const authorization =
+            authorizationHeader ||
+            (cookieToken ? `Bearer ${cookieToken}` : null);
 
         if (!authorization) {
             return NextResponse.json(
@@ -18,13 +25,14 @@ export async function GET(
         }
 
         const response = await fetch(
-            `${BACKEND_URL}/api/chat/conversation/${params.userId}`,
+            `${BACKEND_URL}/api/chat/conversation/${userId}`,
             {
                 method: "GET",
                 headers: {
                     Authorization: authorization,
                     "Content-Type": "application/json",
                 },
+                cache: "no-store",
             }
         );
 
@@ -34,7 +42,11 @@ export async function GET(
         }
 
         const data = await response.json();
-        return NextResponse.json(data);
+        return NextResponse.json(data, {
+            headers: {
+                "Cache-Control": "no-store",
+            },
+        });
     } catch (error) {
         console.error("API Error:", error);
         return NextResponse.json(

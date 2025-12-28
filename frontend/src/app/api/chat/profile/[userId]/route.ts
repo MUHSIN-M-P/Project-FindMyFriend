@@ -5,10 +5,15 @@ const BACKEND_URL =
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
-        const authorization = request.headers.get("authorization");
+        const { userId } = await params;
+        const authorizationHeader = request.headers.get("authorization");
+        const cookieToken = request.cookies.get("auth_token")?.value;
+        const authorization =
+            authorizationHeader ||
+            (cookieToken ? `Bearer ${cookieToken}` : null);
 
         if (!authorization) {
             return NextResponse.json(
@@ -18,7 +23,7 @@ export async function GET(
         }
 
         const response = await fetch(
-            `${BACKEND_URL}/api/chat/profile/${params.userId}`,
+            `${BACKEND_URL}/api/chat/profile/${userId}`,
             {
                 method: "GET",
                 headers: {

@@ -19,7 +19,6 @@ const Message = ({message, pfp}:props) => {
     }
     return (
         <div className="self-start-safe flex items-center gap-2"> 
-            {pfp? <Image src={pfp} alt='their_pfp' width={20} height={20} className="object-contain h-10  w-auto"/> : null}
             <div className="border w-fit py-2 px-3 text-secondary rounded-b-lg rounded-tr-lg my-2 shadow max-w-[65vw] md:max-w-[25vw]">{message.msg}</div>
         </div>
   )

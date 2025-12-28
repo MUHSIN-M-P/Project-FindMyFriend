@@ -5,7 +5,11 @@ const BACKEND_URL =
 
 export async function POST(request: NextRequest) {
     try {
-        const authorization = request.headers.get("authorization");
+        const authorizationHeader = request.headers.get("authorization");
+        const cookieToken = request.cookies.get("auth_token")?.value;
+        const authorization =
+            authorizationHeader ||
+            (cookieToken ? `Bearer ${cookieToken}` : null);
 
         if (!authorization) {
             return NextResponse.json(

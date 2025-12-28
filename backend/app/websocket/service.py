@@ -2,6 +2,7 @@ import asyncio
 import threading
 from typing import Optional
 from app.websocket.server import start_websocket_server
+from app.websocket import server as websocket_server
 from app.websocket.redis_manager import redis_manager
 import os
 
@@ -22,8 +23,8 @@ class WebSocketService:
                 asyncio.set_event_loop(loop)
                 loop.run_until_complete(start_websocket_server(host, port))
                 # Creates a new event loop (asyncio.new_event_loop()) for the thread since asyncio loops are thread-local.
-            except:
-                pass
+            except Exception as e:
+                print(f"WebSocket server thread failed: {e}")
             finally:
                 self.is_running = False
         
@@ -45,14 +46,22 @@ websocket_service = WebSocketService()
 
 def init_websocket_service(app=None):
     """Initialize WebSocket service - starts automatically with Flask"""
+    # Werkzeug debug reloader runs your app twice (parent + child).
+    # Starting the WS server in both causes port bind conflicts and no realtime updates.
+    if os.getenv("FLASK_ENV") != "production":
+        run_main = os.environ.get("WERKZEUG_RUN_MAIN")
+        if run_main is not None and run_main != "true":
+            return websocket_service
+
     host = os.getenv("WEBSOCKET_HOST", "0.0.0.0")
     port = int(os.getenv("WEBSOCKET_PORT", "8765"))
+
+    if app is not None:
+        websocket_server.set_flask_app(app)
     
     websocket_service.start_server_in_thread(host, port)
     
     if app:
         app.websocket_service = websocket_service
-    
-    return websocket_service
     
     return websocket_service

@@ -236,6 +236,33 @@ def send_chat_message():
             return jsonify({"error": "Recipient ID and content are required"}), 400
             
         message = ChatService.send_message(request.jwt_user.id, recipient_id, content, message_type)
+
+        # Push live update to recipient over WebSocket (best-effort).
+        try:
+            from app.websocket.server import schedule_send_to_user
+
+            # Get sender's profile picture
+            sender_pfp = request.jwt_user.profile_pic or "/avatars/male_avatar.png"
+
+            schedule_send_to_user(
+                int(recipient_id),
+                {
+                    "type": "new_message",
+                    "data": {
+                        "id": message.id,
+                        "sender_id": request.jwt_user.id,
+                        "recipient_id": int(recipient_id),
+                        "conversation_id": message.conversation_id,
+                        "content": message.content,
+                        "created_at": message.created_at.isoformat(),
+                        "message_type": message.message_type,
+                        "pfp": sender_pfp,
+                    },
+                },
+            )
+        except Exception:
+            # Don't fail the HTTP request if WS delivery isn't available.
+            pass
         
         if message:
             return jsonify({
@@ -255,8 +282,9 @@ def search_chat_users():
     try:
         query = request.args.get('q', '').strip()
         if not query:
-            return jsonify([])
-            
+            results = ChatService.suggest_users(request.jwt_user.id)
+            return jsonify(results)
+
         results = ChatService.search_users(query, request.jwt_user.id)
         return jsonify(results)
     except Exception as e:

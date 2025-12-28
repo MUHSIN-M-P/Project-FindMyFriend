@@ -1,5 +1,5 @@
-from app.models import db, User
-from sqlalchemy import select
+from app.models import db, User, Conversations,MessageStatus
+from sqlalchemy import select, or_
 from datetime import datetime
 
 #  institute's domain 
@@ -10,8 +10,8 @@ class AuthService:
     @staticmethod
     def create_user(username,hosted_domain, email=None, profile_pic=None):
         try:
-            if hosted_domain != ALLOWED_DOMAIN:
-                return f"Access denied: unauthorized domain, only emails with domain {ALLOWED_DOMAIN} are allowed", 403
+            # if hosted_domain != ALLOWED_DOMAIN:
+            #     return {"success": False, "message": f"Access denied: unauthorized domain, only emails with domain {ALLOWED_DOMAIN} are allowed"}
             new_user = User(
                 username=username,
                 email=email,
@@ -91,3 +91,31 @@ class AuthService:
     def get_user_by_id(user_id):
         """Get user by ID"""
         return db.session.get(User, user_id)
+    
+    @staticmethod
+    def delete_account(user_id:int):
+        try:
+            user = AuthService.get_user_by_id(user_id)
+            if not user:
+                return {"success": False, "message": "User not found"}
+
+            db.session.query(MessageStatus).filter(
+                MessageStatus.recipient_id == user_id
+            ).delete(synchronize_session=False)
+
+            conversations = db.session.query(Conversations).filter(
+                or_(
+                    Conversations.sender_id == user_id,
+                    Conversations.receiver_id == user_id,
+                )
+            ).all()
+
+            for conv in conversations:
+                db.session.delete(conv)
+
+            db.session.delete(user)
+            db.session.commit()
+            return {"success": True}
+        except Exception as e:
+            db.session.rollback()
+            return {"success": False, "message": str(e)}

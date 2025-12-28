@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
         const authorizationHeader = request.headers.get("authorization");
         const cookieToken = request.cookies.get("auth_token")?.value;
@@ -18,19 +18,22 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const body = await request.json();
+        const url = new URL(request.url);
+        const q = url.searchParams.get("q") || "";
 
-        const response = await fetch(`${BACKEND_URL}/api/chat/send`, {
-            method: "POST",
-            headers: {
-                Authorization: authorization,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
-        });
+        const response = await fetch(
+            `${BACKEND_URL}/api/chat/search?q=${encodeURIComponent(q)}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: authorization,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             return NextResponse.json(errorData, { status: response.status });
         }
 

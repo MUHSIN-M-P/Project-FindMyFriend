@@ -48,11 +48,17 @@ def jwt_required(f):
     """Decorator to authenticate users with JWT tokens for API access"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({"error": "Missing or invalid authorization header"}), 401
+         # First try to get token from cookie (preferred for SPA)
+        token = request.cookies.get('auth_token')
         
-        token = auth_header.split(' ')[1]
+        # Fallback to Authorization header for API calls
+        if not token:
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+        
+        if not token:
+            return jsonify({"error": "Missing authentication token"}), 401
         secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
         
         try:

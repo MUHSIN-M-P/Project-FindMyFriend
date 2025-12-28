@@ -23,17 +23,24 @@ interface Contact {
 }
 
 interface UseWebSocketProps {
-    token?: string;
     onNewMessage?: (message: Message) => void;
     onContactUpdate?: (contact: Contact) => void;
 }
 
 export function useWebSocket({
-    token,
     onNewMessage,
     onContactUpdate,
 }: UseWebSocketProps) {
     const wsRef = useRef<WebSocket | null>(null);
+    const onNewMessageRef = useRef<
+        UseWebSocketProps["onNewMessage"] | undefined
+    >(undefined);
+    const onContactUpdateRef = useRef<
+        UseWebSocketProps["onContactUpdate"] | undefined
+    >(undefined);
+    const connectInFlightRef = useRef(false);
+    const reconnectTimerRef = useRef<number | null>(null);
+    const retryCountRef = useRef(0);
     const [isConnected, setIsConnected] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
@@ -43,19 +50,29 @@ export function useWebSocket({
     const [retryCount, setRetryCount] = useState(0);
     const maxRetries = 3;
 
-    const connect = useCallback(async () => {
-        if (!token) return;
+    useEffect(() => {
+        onNewMessageRef.current = onNewMessage;
+        onContactUpdateRef.current = onContactUpdate;
+    }, [onNewMessage, onContactUpdate]);
 
+    const connect = useCallback(async () => {
         try {
+            if (connectInFlightRef.current) return;
+            if (
+                wsRef.current &&
+                (wsRef.current.readyState === WebSocket.OPEN ||
+                    wsRef.current.readyState === WebSocket.CONNECTING)
+            ) {
+                return;
+            }
+
+            connectInFlightRef.current = true;
+
             setConnectionStatus("connecting");
 
-            // First, get WebSocket token from backend
-            const tokenResponse = await fetch("/api/websocket/token", {
+            // Get WebSocket token from backend using HttpOnly cookie
+            const tokenResponse = await fetch("/api/auth/websocket-token", {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
             });
 
             if (!tokenResponse.ok) {
@@ -76,6 +93,14 @@ export function useWebSocket({
                 setIsConnected(true);
                 setConnectionStatus("connected");
                 console.log("Connected to WebSocket");
+
+                // Cancel any scheduled reconnect attempts
+                if (reconnectTimerRef.current != null) {
+                    window.clearTimeout(reconnectTimerRef.current);
+                    reconnectTimerRef.current = null;
+                }
+                retryCountRef.current = 0;
+                setRetryCount(0);
 
                 // Send authentication with WebSocket token
                 ws.send(
@@ -100,7 +125,7 @@ export function useWebSocket({
                             break;
 
                         case "new_message":
-                            if (onNewMessage && data.data) {
+                            if (onNewMessageRef.current && data.data) {
                                 const message: Message = {
                                     id: data.data.id.toString(),
                                     type: "received",
@@ -111,7 +136,7 @@ export function useWebSocket({
                                         data.data.message_type || "text",
                                     sender_id: data.data.sender_id,
                                 };
-                                onNewMessage(message);
+                                onNewMessageRef.current(message);
                             }
                             break;
 
@@ -139,18 +164,30 @@ export function useWebSocket({
                 console.error("WebSocket error:", error);
                 setConnectionStatus("disconnected");
 
-                // Retry connection
-                if (retryCount < maxRetries) {
-                    setTimeout(() => {
-                        console.log(
-                            `Retrying connection (${
-                                retryCount + 1
-                            }/${maxRetries})...`
-                        );
-                        setRetryCount((prev) => prev + 1);
-                        connect();
-                    }, 2000 * (retryCount + 1)); // Exponential backoff
+                // Avoid multiple concurrent reconnect timers
+                if (reconnectTimerRef.current != null) return;
+
+                // Force close so we don't keep a broken socket around
+                try {
+                    ws.close();
+                } catch {
+                    // ignore
                 }
+
+                const currentRetry = retryCountRef.current;
+                if (currentRetry >= maxRetries) return;
+
+                const nextRetry = currentRetry + 1;
+                retryCountRef.current = nextRetry;
+                setRetryCount(nextRetry);
+
+                reconnectTimerRef.current = window.setTimeout(() => {
+                    reconnectTimerRef.current = null;
+                    console.log(
+                        `Retrying connection (${nextRetry}/${maxRetries})...`
+                    );
+                    connect();
+                }, 2000 * nextRetry);
             };
 
             ws.onclose = () => {
@@ -160,16 +197,28 @@ export function useWebSocket({
                 setConnectionStatus("disconnected");
                 console.log("Disconnected from WebSocket");
 
+                // Clear ref so a new connection can be created
+                if (wsRef.current === ws) {
+                    wsRef.current = null;
+                }
+
                 // Reset retry count on clean disconnect
+                retryCountRef.current = 0;
                 setRetryCount(0);
             };
         } catch (error) {
             console.error("Failed to connect to WebSocket:", error);
             setConnectionStatus("disconnected");
+        } finally {
+            connectInFlightRef.current = false;
         }
-    }, [token, onNewMessage, onContactUpdate, retryCount]);
+    }, []);
 
     const disconnect = useCallback(() => {
+        if (reconnectTimerRef.current != null) {
+            window.clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = null;
+        }
         if (wsRef.current) {
             wsRef.current.close();
             wsRef.current = null;
@@ -243,14 +292,13 @@ export function useWebSocket({
     );
 
     useEffect(() => {
-        if (token) {
-            connect();
-        }
+        // Auto-connect when component mounts
+        connect();
 
         return () => {
             disconnect();
         };
-    }, [token, connect, disconnect]);
+    }, [connect, disconnect]);
 
     return {
         isConnected,

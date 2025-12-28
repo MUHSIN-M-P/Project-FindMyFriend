@@ -18,7 +18,7 @@ const Contact = ({contact}:props) => {
             <Image src={contact.pfp_path} alt={`${contact.name}_pfp`} width={20} height={20} className="w-15"/>
         </div>
         <div className="flex flex-col truncate font-poppins relative w-full">
-            <div className="name text-xl">
+            <div className="name text-lg">
                 {contact.name}
             </div>
             <div className="desc text-sm truncate font-light max-w-full">

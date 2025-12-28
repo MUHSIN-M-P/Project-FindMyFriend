@@ -22,10 +22,31 @@ def generate_websocket_token():
     }
     
     token = jwt.encode(payload, secret_key, algorithm="HS256")
-    
+
+    # Prefer an explicit public URL when deployed behind proxies / different hosts.
+    explicit_ws_url = (
+        os.getenv("WEBSOCKET_PUBLIC_URL")
+        or os.getenv("WEBSOCKET_URL")
+        or os.getenv("NEXT_PUBLIC_WEBSOCKET_URL")
+    )
+
+    if explicit_ws_url:
+        websocket_url = explicit_ws_url
+    else:
+        # Build URL from the current request host.
+        # Use X-Forwarded-Proto when behind a reverse proxy.
+        forwarded_proto = (request.headers.get("X-Forwarded-Proto") or "").lower()
+        is_secure = request.is_secure or forwarded_proto == "https"
+        scheme = "wss" if is_secure else "ws"
+
+        host_header = request.headers.get("X-Forwarded-Host") or request.host
+        hostname = (host_header or "localhost").split(":")[0]
+        ws_port = os.getenv("WEBSOCKET_PORT", "8765")
+        websocket_url = f"{scheme}://{hostname}:{ws_port}"
+
     return jsonify({
         "token": token,
-        "websocket_url": f"ws://localhost:{os.getenv('WEBSOCKET_PORT', '8765')}"
+        "websocket_url": websocket_url,
     })
 
 @websocket_bp.route('/status', methods=['GET'])

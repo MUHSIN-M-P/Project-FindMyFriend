@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
-export async function GET(request: NextRequest) {
+export async function PUT(request: NextRequest) {
     try {
         const authorizationHeader = request.headers.get("authorization");
         const cookieToken = request.cookies.get("auth_token")?.value;
@@ -13,43 +13,35 @@ export async function GET(request: NextRequest) {
 
         if (!authorization) {
             return NextResponse.json(
-                { error: "Authorization header required" },
+                { error: "Missing authentication token" },
                 { status: 401 }
             );
         }
 
-        const response = await fetch(`${BACKEND_URL}/api/chat/contacts`, {
-            method: "GET",
+        const bodyText = await request.text();
+
+        const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
+            method: "PUT",
             headers: {
                 Authorization: authorization,
                 "Content-Type": "application/json",
             },
+            body: bodyText,
         });
 
+        const contentType = response.headers.get("content-type") || "";
+        const payload = contentType.includes("application/json")
+            ? await response.json()
+            : await response.text();
+
         if (!response.ok) {
-            const contentType = response.headers.get("content-type") || "";
-            const bodyText = await response.text();
-            if (contentType.includes("application/json")) {
-                try {
-                    return NextResponse.json(JSON.parse(bodyText), {
-                        status: response.status,
-                    });
-                } catch {
-                    // fall through to text
-                }
-            }
             return NextResponse.json(
-                {
-                    error:
-                        bodyText ||
-                        `Backend error (${response.status}) when fetching contacts`,
-                },
+                typeof payload === "string" ? { error: payload } : payload,
                 { status: response.status }
             );
         }
 
-        const data = await response.json();
-        return NextResponse.json(data);
+        return NextResponse.json(payload, { status: response.status });
     } catch (error) {
         console.error("API Error:", error);
         return NextResponse.json(

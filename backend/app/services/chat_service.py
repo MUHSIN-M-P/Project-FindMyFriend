@@ -48,10 +48,15 @@ class ChatService:
     
     @staticmethod
     def get_conversation_messages(conversation_id: int) -> List[Messages]:
-        conversation = db.session.get(Conversations, conversation_id)
-        if conversation:
-            return conversation.messages  # Uses relationship
-        return []
+        return (
+            db.session.execute(
+                select(Messages)
+                .where(Messages.conversation_id == conversation_id)
+                .order_by(Messages.created_at.asc())
+            )
+            .scalars()
+            .all()
+        )
     
     @staticmethod
     def send_message(sender_id: int, recipient_id: int, content: str, message_type: str = "text") -> Messages:
@@ -145,9 +150,8 @@ class ChatService:
             # Count unread messages
             unread_count = db.session.execute(
                 select(func.count(MessageStatus.id))
-                .select_from(
-                    Messages.join(MessageStatus, Messages.id == MessageStatus.message_id)
-                )
+                .select_from(Messages)
+                .join(MessageStatus, Messages.id == MessageStatus.message_id)
                 .where(
                     and_(
                         Messages.conversation_id == conv.id,
@@ -165,7 +169,7 @@ class ChatService:
                 "id": str(other_user.id),
                 "conversation_id": conv.id,
                 "name": other_user.username,
-                "pfp_path": other_user.profile_pic or other_user.pfp_url or "/avatars/male_avatar.png",
+                "pfp_path": other_user.profile_pic or "/avatars/male_avatar.png",
                 "latest_msg": latest_message.content if latest_message else "No messages yet",
                 "latest_msg_time": latest_message.created_at.isoformat() if latest_message else None,
                 "unread_count": unread_count,
@@ -209,7 +213,7 @@ class ChatService:
             # Add profile picture for received messages
             if msg.sender_id != current_user_id:
                 sender = msg.sender
-                message_data["pfp"] = sender.profile_pic or sender.pfp_url or "/avatars/male_avatar.png"
+                message_data["pfp"] = sender.profile_pic or "/avatars/male_avatar.png"
                 
             message_list.append(message_data)
         
@@ -264,10 +268,40 @@ class ChatService:
                 "id": user.id,
                 "name": user.username,
                 "email": user.email,
-                "pfp_path": user.profile_pic or user.pfp_url or "/avatars/male_avatar.png",
-                "is_online": redis_manager.is_user_online(user.id)
+                "pfp_path": user.profile_pic or "/avatars/male_avatar.png",
+                "is_online": redis_manager.is_user_online(user.id),
+                "age": user.age,
+                "sex": user.sex,
+                "hobbies": user.hobbies.split(",") if user.hobbies else [],
+                "bio": user.bio
             })
             
+        return results
+
+    @staticmethod
+    def suggest_users(current_user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+        """Suggested users list (used for Find tab and when search is empty)."""
+        users = db.session.execute(
+            select(User)
+            .where(User.id != current_user_id)
+            .order_by(desc(User.last_seen), desc(User.created_at))
+            .limit(limit)
+        ).scalars().all()
+
+        results = []
+        for user in users:
+            results.append({
+                "id": user.id,
+                "name": user.username,
+                "email": user.email,
+                "pfp_path": user.profile_pic or "/avatars/male_avatar.png",
+                "is_online": redis_manager.is_user_online(user.id),
+                "age": user.age,
+                "sex": user.sex,
+                "hobbies": user.hobbies.split(",") if user.hobbies else [],
+                "bio": user.bio
+            })
+
         return results
     
     @staticmethod
@@ -282,7 +316,7 @@ class ChatService:
                 online_users.append({
                     "id": other_user.id,
                     "name": other_user.username,
-                    "pfp_path": other_user.profile_pic or other_user.pfp_url or "/avatars/male_avatar.png"
+                    "pfp_path": other_user.profile_pic  or "/avatars/male_avatar.png"
                 })
                 
         return online_users

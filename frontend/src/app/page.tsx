@@ -1,7 +1,34 @@
+"use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
+    const router = useRouter();
+    const { user, isLoading } = useAuth();
+
+    // Redirect to /app if user is already logged in
+    useEffect(() => {
+        if (user && !isLoading) {
+            router.push("/app");
+        }
+    }, [user, isLoading, router]);
+
+    const handleJoinNow = () => {
+        const backendUrl =
+            process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+        window.location.href = `${backendUrl}/login`;
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
     return (
         <div className="flex flex-col min-h-screen w-full bg-background font-poppins text-secondary">
             {/* Hero Section */}
@@ -31,7 +58,7 @@ export default function Home() {
     "
                             style={{
                                 boxShadow: `
-                                   0px 0px 21px 22px rgba(255,255,255,0.82);
+                                   0px 0px 21px 22px rgba(255,255,255,0.82)
                                 `,
                             }}
                         >
@@ -72,16 +99,17 @@ export default function Home() {
 
                         {/* CTA Buttons */}
                         <div className="absolute left-1/2 top-[68%] md:top-[66%] lg:top-[70%] -translate-x-1/2 z-30 px-6 md:px-10 py-4 w-full max-w-md md:max-w-lg mb-4">
-                            <Link href="/find" className="w-full max-w-[500px]">
-                                <button className="group relative w-full py-3 px-8 rounded-xl cursor-pointer tracking-wide text-xl font-poppins font-bold shadow-2 bg-primary text-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all border-none overflow-hidden">
-                                    <span className="block transition-all duration-200 ease-out group-hover:opacity-0 group-hover:-translate-y-2">
-                                        Join Now
-                                    </span>
-                                    <span className="absolute inset-0 flex items-center justify-center opacity-0 translate-y-2 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0">
-                                        Sign in with Google
-                                    </span>
-                                </button>
-                            </Link>
+                            <button
+                                onClick={handleJoinNow}
+                                className="group relative w-full py-3 px-8 rounded-xl cursor-pointer tracking-wide text-xl font-poppins font-bold shadow-2 bg-primary text-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all border-none overflow-hidden"
+                            >
+                                <span className="block transition-all duration-200 ease-out group-hover:opacity-0 group-hover:-translate-y-2">
+                                    Join Now
+                                </span>
+                                <span className="absolute inset-0 flex items-center justify-center opacity-0 translate-y-2 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0">
+                                    Sign in with Google
+                                </span>
+                            </button>
                         </div>
                     </div>
 
@@ -138,11 +166,12 @@ export default function Home() {
                             <p className="text-sm text-secondary/80">
                                 Discover people with shared interests.
                             </p>
-                            <Link href="/find" className="mt-2 w-fit">
-                                <button className="py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all">
-                                    Open
-                                </button>
-                            </Link>
+                            <button
+                                onClick={handleJoinNow}
+                                className="mt-2 py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all"
+                            >
+                                Open
+                            </button>
                         </div>
 
                         <div className="rounded-3xl shadow-3 bg-background p-6 flex flex-col gap-3">
@@ -152,11 +181,12 @@ export default function Home() {
                             <p className="text-sm text-secondary/80">
                                 Start conversations and build your tribe.
                             </p>
-                            <Link href="/chat" className="mt-2 w-fit">
-                                <button className="py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all">
-                                    Open
-                                </button>
-                            </Link>
+                            <button
+                                onClick={handleJoinNow}
+                                className="mt-2 py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all w-fit"
+                            >
+                                Open
+                            </button>
                         </div>
 
                         <div className="rounded-3xl shadow-3 bg-background p-6 flex flex-col gap-3">
@@ -166,11 +196,12 @@ export default function Home() {
                             <p className="text-sm text-secondary/80">
                                 Answer questions to improve your matches.
                             </p>
-                            <Link href="/quiz" className="mt-2 w-fit">
-                                <button className="py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all">
-                                    Open
-                                </button>
-                            </Link>
+                            <button
+                                onClick={handleJoinNow}
+                                className="mt-2 py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all w-fit"
+                            >
+                                Open
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -214,7 +245,7 @@ export default function Home() {
                         {/* Right - Links */}
                         <div className="flex gap-6 text-sm">
                             <a
-                                href="#"
+                                href="/about"
                                 className="hover:text-primary transition-colors"
                             >
                                 About

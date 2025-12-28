@@ -1,15 +1,18 @@
 "use client";
-import Link from "next/link";
 import RetroButton from "./retroButton";
+
+type View = "find" | "chat" | "quiz" | "profile" | "activity" | "settings";
+
 interface NavbarProps {
-    currentPath: string;
+    currentView: View;
+    onViewChange: (view: View) => void;
 }
 
-const Navbar = ({ currentPath }: NavbarProps) => {
+const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
     const navLinks = [
-        { name: "Find", href: "/find" },
-        { name: "Questions", href: "/quiz" },
-        { name: "Profile", href: "/profile" },
+        { name: "Find", view: "find" as View },
+        { name: "Questions", view: "quiz" as View },
+        { name: "Profile", view: "profile" as View },
     ];
     const res = { data: { msgNo: 5, notifNo: 1 } }; // await axios.get("___")
     const msgNo = res.data.msgNo;
@@ -17,31 +20,32 @@ const Navbar = ({ currentPath }: NavbarProps) => {
 
     // Determine title based on current path
     const getNavTitle = () => {
-        if (currentPath === "/") return "UniSphere";
-        if (currentPath === "/find") return "Find Your Tribe";
-        if (currentPath === "/quiz") return "Answer Questions";
-        if (currentPath === "/profile" || currentPath.startsWith("/profile/"))
-            return "Your Profile";
-        if (currentPath === "/chat") return "Your Messages";
-        if (currentPath === "/activity") return "Your Activity";
-        if (currentPath === "/settings") return "Your Settings";
-        return "UniSphere";
+        switch (currentView) {
+            case "find": return "Find Your Tribe";
+            case "quiz": return "Answer Questions";
+            case "profile": return "Your Profile";
+            case "chat": return "Your Messages";
+            case "activity": return "Your Activity";
+            case "settings": return "Your Settings";
+            default: return "UniSphere";
+        }
     };
 
     return (
         <div className="flex">
             <div className="h-[27px]"></div>
-            <nav className="min-h-[10vh] bg-background md:py-8 flex items-center justify-around w-full ">
-                <Link href="/">
-                    <div className="main_title font-bungee text-2xl md:text-4xl text-secondary cursor-pointer">
-                        {getNavTitle()}
-                    </div>
-                </Link>
+            <nav className="min-h-[10vh] bg-background md:py-8 flex items-center justify-between w-9/10 mx-auto">
+                <div 
+                    onClick={() => onViewChange("find")}
+                    className="main_title font-bungee text-2xl md:text-4xl text-secondary cursor-pointer"
+                >
+                    {getNavTitle()}
+                </div>
                 <div className="navButtons hidden lg:flex px-[21px] grow lg:grow-0 flex-row">
                     {navLinks.map((link) => {
-                        const isActive = currentPath === link.href;
+                        const isActive = currentView === link.view;
                         return (
-                            <Link key={link.name} href={link.href}>
+                            <div key={link.name} onClick={() => onViewChange(link.view)}>
                                 <RetroButton
                                     text={link.name}
                                     icon={null}
@@ -54,34 +58,34 @@ const Navbar = ({ currentPath }: NavbarProps) => {
                                             : "text-secondary"
                                     }`}
                                 />
-                            </Link>
+                            </div>
                         );
                     })}
-                    <Link href="/chat">
+                    <div onClick={() => onViewChange("chat")}>
                         <RetroButton
                             text="Messages"
                             icon={null}
                             onClick={() => {}}
-                            isActive={true}
+                            isActive={currentView === "chat"}
                             msgNo={msgNo}
                             extraClass=""
                         />
-                    </Link>
+                    </div>
                 </div>
                 <div className="block lg:hidden relative">
                     <div className="flex items-center gap-5">
-                        <Link
-                            href="/activity"
+                        <button
+                            onClick={() => onViewChange("activity")}
                             className={`relative ${
-                                currentPath === "/profile" ||
-                                currentPath === "/settings"
+                                currentView === "profile" ||
+                                currentView === "settings"
                                     ? "hidden"
                                     : ""
                             }`}
                         >
                             <img
                                 src={
-                                    currentPath === "/activity"
+                                    currentView === "activity"
                                         ? `/icons/heart_outline.svg`
                                         : `/icons/heart_outline_active.svg`
                                 }
@@ -95,12 +99,12 @@ const Navbar = ({ currentPath }: NavbarProps) => {
                             >
                                 {notifNo}
                             </div>
-                        </Link>
-                        <Link
-                            href="/chat"
+                        </button>
+                        <button
+                            onClick={() => onViewChange("chat")}
                             className={`relative ${
-                                currentPath === "/profile" ||
-                                currentPath === "/settings"
+                                currentView === "profile" ||
+                                currentView === "settings"
                                     ? "hidden"
                                     : ""
                             }`}
@@ -118,11 +122,11 @@ const Navbar = ({ currentPath }: NavbarProps) => {
                             >
                                 {msgNo}
                             </div>
-                        </Link>
-                        <Link
-                            href="/settings"
+                        </button>
+                        <button
+                            onClick={() => onViewChange("settings")}
                             className={`relative ${
-                                currentPath === "/profile" ? "" : "hidden"
+                                currentView === "profile" ? "" : "hidden"
                             }`}
                         >
                             <img
@@ -131,11 +135,10 @@ const Navbar = ({ currentPath }: NavbarProps) => {
                                 className="object-contain h-8"
                                 width={30}
                             />
-                        </Link>
+                        </button>
                     </div>
                 </div>
             </nav>
-            {/* <div className="bg-secondary h-[3px] w-full"></div> */}
         </div>
     );
 };

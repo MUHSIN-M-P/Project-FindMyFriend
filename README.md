@@ -1,18 +1,18 @@
-# Project-FindMyFriend
+# UniSphere
 
-A full-stack social networking platform that helps you find friends based on shared interests and personality compatibility. Built with **Flask** (Python) backend and **Next.js** (TypeScript/React) frontend, featuring real-time chat powered by WebSockets and Redis.
+A full-stack social networking platform exclusively for **NIT Calicut students** that helps you find friends based on shared interests and personality compatibility. Built with **Flask** (Python) backend and **Next.js** (TypeScript/React) frontend, featuring real-time chat powered by WebSockets and Redis.
 
 ## 🌟 Project Overview
 
-**FindMyFriend** is a modern friend-finding application that combines personality matching, real-time messaging, and social features to help users connect with like-minded people. The platform uses questionnaires to match users based on compatibility scores and provides seamless communication through an integrated chat system.
+**UniSphere** is a modern campus networking application designed specifically for NIT Calicut students. It combines personality matching, real-time messaging, and social features to help students connect with like-minded peers. The platform uses questionnaires to match users based on compatibility scores and provides seamless communication through an integrated chat system.
 
 ### Key Features
 
 #### 🎯 **Personality Matching System**
 
 -   Interactive questionnaire to determine user preferences and personality traits
--   Compatibility scoring algorithm to match users with similar interests
--   "Best Match" recommendations based on quiz responses
+-   Compatibility scoring algorithm to match students with similar interests
+-   "Find Your Tribe" recommendations based on quiz responses
 -   View potential friends' profiles with compatibility scores
 
 #### 💬 **Real-Time Chat System**
@@ -28,22 +28,21 @@ A full-stack social networking platform that helps you find friends based on sha
 #### 👤 **User Profiles**
 
 -   Customizable profile with bio, age, gender, hobbies
--   Profile picture support (OAuth integration + custom avatars)
+-   Profile picture support (Google OAuth integration)
 -   Social media links integration (Instagram, WhatsApp, GitHub)
 -   Activity feed showing user interactions
 -   "Top Questions" showcase on profiles
 
 #### 🔐 **Authentication & Security**
 
--   Google OAuth 2.0 integration for easy sign-up/login
+-   Google OAuth 2.0 integration (restricted to @nitc.ac.in emails)
 -   JWT token-based authentication
 -   Secure WebSocket authentication with separate token validation
--   Session management with Flask-Login
 -   Protected routes and API endpoints
 
 #### 📱 **Responsive UI/UX**
 
--   Retro-inspired design with modern functionality
+-   Modern landing page with campus branding
 -   Mobile-responsive layout
 -   Bottom navigation bar for easy mobile access
 -   Real-time UI updates without page refreshes

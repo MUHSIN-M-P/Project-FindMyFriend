@@ -1,13 +1,16 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "frontend": "next dev",
     "backend:win": "cd ..\\backend && ..\\.venv\\Scripts\\python.exe run.py",
     "backend:linux": "cd ../backend && ../.venv/bin/python run.py",
     "dev:win": "concurrently \"npm run frontend\" \"npm run backend:win\"",
-    "dev:linux": "concurrently \"npm run frontend\" \"npm run backend:linux\""
+    "dev:linux": "concurrently \"npm run frontend\" \"npm run backend:linux\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "concurrently": "^9.2.0",

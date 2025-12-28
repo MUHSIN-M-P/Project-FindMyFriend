@@ -14,7 +14,7 @@ class User(UserMixin, db.Model):
     last_seen: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     age: Mapped[int] = mapped_column(Integer, nullable=True)
     sex: Mapped[str] = mapped_column(Text, nullable=True)
-    pfp_url: Mapped[str] = mapped_column(Text, nullable=True, default="/avatars/male_avatar.png")
+    profile_pic: Mapped[str] = mapped_column(Text, nullable=True, default="/avatars/male_avatar.png")
     hobbies: Mapped[str] = mapped_column(Text, nullable=True)  # JSON string of hobbies
     bio: Mapped[str] = mapped_column(Text, nullable=True)
     
@@ -28,7 +28,7 @@ class User(UserMixin, db.Model):
             "username": self.username,
             "age": self.age,
             "sex": self.sex,
-            "pfp_url": self.pfp_url or self.profile_pic or "/avatars/male_avatar.png",
+            "profile_pic":  self.profile_pic or "/avatars/male_avatar.png",
             "bio": self.bio,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "hobbies": self.hobbies.split(",") if self.hobbies else []
