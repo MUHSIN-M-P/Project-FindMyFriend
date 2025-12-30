@@ -60,14 +60,13 @@ const Usercard = ({ user, onUserClick }: props) => {
                     href={`/profile/${user.id}`}
                     className="intro_title font-semibold text-[22px]"
                 >
-                    {user.name} | {user.age}
-                    {user.gender}
+                    {user.name} | {user.age} {user.gender}
                 </Link>
                 <div className="Hobbies flex gap-2 lg:gap-3 text-secondary flex-wrap">
                     {user.hobbies.map((hobby, index) => (
                         <span
                             key={index}
-                            className="px-3 py-[6px] rounded-lg border-2 border-retro_border bg-background text-secondary text-sm font-poppins font-semibold tracking-wide"
+                            className="px-2 py-[4px] rounded-lg border-2 border-retro_border bg-background text-secondary text-xs font-poppins font-semibold tracking-wide"
                         >
                             {hobby}
                         </span>

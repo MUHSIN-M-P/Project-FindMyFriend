@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import ContactsList from "@/components/Chat_Components/ContactsList";
+import ContactsList from "@/components/Chat_Components/ChatList";
 import ChatArea from "@/components/Chat_Components/ChatArea";
 import ProfilePanel from "@/components/Chat_Components/ProfilePanel";
 import { useAuth } from "@/hooks/useAuth";
@@ -287,6 +287,13 @@ export default function ChatView() {
                 c.id === contact.id ? { ...c, unread_count: 0, number: 0 } : c
             )
         );
+        if (typeof window !== "undefined" && window.matchMedia) {
+            if (window.matchMedia("(min-width: 1024px)").matches) {
+                setShowChat(true);
+                setShowProfile(true);
+                return;
+            }
+        }
         setShowChat(true);
     };
 
@@ -369,7 +376,7 @@ export default function ChatView() {
 
             {/* Chat Tab */}
             <div
-                className={`w-full ${
+                className={`flex-1 ${
                     showChat && selectedContact ? "" : "hidden lg:flex"
                 }`}
             >
@@ -387,18 +394,35 @@ export default function ChatView() {
                 />
             </div>
 
-            {/* Profile Panel */}
-            <ProfilePanel
-                isVisible={showProfile}
-                onClose={() => setShowProfile(false)}
-                name={name}
-                age={age}
-                sex={sex}
-                score={score}
-                pfp={pfp}
-                hobbies={hobbies}
-                socials={socials}
-            />
+            {/* Profile Panel: overlay on mobile, inline on desktop */}
+            <div className="lg:hidden">
+                <ProfilePanel
+                    isVisible={showProfile}
+                    onClose={() => setShowProfile(false)}
+                    name={name}
+                    age={age}
+                    sex={sex}
+                    score={score}
+                    pfp={pfp}
+                    hobbies={hobbies}
+                    socials={socials}
+                />
+            </div>
+
+            <div className={`${showProfile ? "" : "hidden"} hidden lg:flex`}> 
+                <ProfilePanel
+                    isVisible={showProfile}
+                    inline={true}
+                    onClose={() => setShowProfile(false)}
+                    name={name}
+                    age={age}
+                    sex={sex}
+                    score={score}
+                    pfp={pfp}
+                    hobbies={hobbies}
+                    socials={socials}
+                />
+            </div>
         </div>
     );
 }

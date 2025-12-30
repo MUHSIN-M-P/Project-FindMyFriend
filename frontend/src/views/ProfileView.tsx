@@ -3,6 +3,7 @@
 import Image from "next/image";
 import RetroButton from "@/components/retroButton";
 import YourActivity from "@/components/yourActivity";
+import SettingsView from "@/views/SettingsView";
 import QuestionCard from "@/components/questionCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
@@ -13,14 +14,9 @@ interface ProfileViewProps {
 }
 
 export default function ProfileView({ userId }: ProfileViewProps) {
-    const { user: currentUser, logout, refreshUser } = useAuth();
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const { user: currentUser, refreshUser } = useAuth();
     const [isEditingProfile, setIsEditingProfile] = useState(false);
-
-    const handleLogout = async () => {
-        setIsLoggingOut(true);
-        await logout();
-    };
+    const [showSettings, setShowSettings] = useState(false);
 
     const res = {
         data: {
@@ -126,11 +122,11 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                       currentUser.profile_pic || "/avatars/male_avatar.png",
                   score: -1,
                   bestMatch: false,
-                  social_links: [
-                      { name: "Instagram", link: "#" },
-                      { name: "Whatsapp", link: "#" },
-                      { name: "Github", link: "#" },
-                  ],
+                  social_links: Array.isArray(currentUser.social_links)
+                      ? currentUser.social_links.filter(
+                            (l) => l.link && l.link.trim() !== ""
+                        )
+                      : [],
                   topQuestions: placeholderUser.topQuestions,
               }
             : placeholderUser;
@@ -162,7 +158,7 @@ export default function ProfileView({ userId }: ProfileViewProps) {
         },
     };
     const notifications = notifications_res.data.notifications;
-
+    console.log(user.social_links)
     return (
         <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-5 md:px-10 xl:px-20 pb-20">
             <div className="lhs w-full lg:w-[65vw] px-5 max-sm:px-0! pb-5 flex flex-col gap-5 items-center border-t-3 lg:border-3 border-r-0! border-retro_border">
@@ -180,44 +176,27 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                     </div>
                     <div className="userInfo w-full flex flex-col gap-2 mb-2 md:mb-0">
                         <div className="intro_title font-semibold text-[22px] max-md:text-center">
-                            {user.name} | {user.age}
-                            {user.gender}
+                            {user.name} | {user.age} {user.gender}
                         </div>
                         <div className="Hobbies flex gap-2 lg:gap-3 text-secondary flex-wrap max-md:justify-center ">
                             {user.hobbies.map((hobby, index) => (
                                 <span
                                     key={index}
-                                    className="px-3 py-[6px] rounded-lg border-2 border-retro_border bg-background text-secondary text-sm font-poppins font-semibold tracking-wide"
+                                    className="px-2 py-[4px] rounded-lg border-2 border-retro_border bg-background text-secondary text-xs font-poppins font-semibold tracking-wide"
                                 >
                                     {hobby}
                                 </span>
                             ))}
-                            <RetroButton
-                                text="Edit tags"
-                                icon="/icons/edit_ic.svg"
-                                onClick={() => setIsEditingProfile(true)}
-                                isActive={true}
-                                msgNo={0}
-                                extraClass="mx-0! max-md:hidden!"
-                            />
                         </div>
                     </div>
                     <div className="md:absolute right-0 top-0 btns flex w-fit py-10 max-md:py-0! items-start gap-4 text-secondary">
                         <RetroButton
-                            text={`Share profile`}
-                            icon="/icons/share.svg"
-                            onClick={() => {}}
-                            isActive={false}
-                            msgNo={0}
-                            extraClass="mx-0! bg-retro_orange md:hidden!"
-                        />
-                        <RetroButton
                             text="Edit profile"
                             icon={"/icons/edit_ic.svg"}
-                            onClick={() => {}}
+                            onClick={() => setIsEditingProfile(true)}
                             isActive={true}
                             msgNo={0}
-                            extraClass="mx-0! w-full md:hidden!"
+                            extraClass="mx-0! w-full "
                         />
                     </div>
                 </div>
@@ -225,14 +204,6 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                 <div className="text-secondary text-[22px] text-left w-full flex flex-col gap-3 items-center">
                     <div className="flex flex-row justify-between w-full">
                         About me
-                        <RetroButton
-                            text="Edit details"
-                            icon="/icons/edit_ic.svg"
-                            onClick={() => setIsEditingProfile(true)}
-                            isActive={true}
-                            msgNo={0}
-                            extraClass="mx-0! max-md:hidden!"
-                        />
                     </div>
                     <div className="desc text-[16px] w-full px-4 text-justify!">
                         {user.desc}
@@ -240,62 +211,45 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                 </div>
 
                 <div className="w-full flex flex-row flex-wrap gap-2 justify-around items-center">
-                    <a
-                        target="_blank"
-                        href={user.social_links[0].link}
-                        rel="noopener noreferrer"
-                    >
-                        <RetroButton
-                            text={`Instagram`}
-                            icon="/icons/instagram.svg"
-                            onClick={() => {}}
-                            isActive={false}
-                            msgNo={0}
-                            extraClass="mx-0! bg-retro_orange"
-                        />
-                    </a>
-                    <a
-                        target="_blank"
-                        href={user.social_links[1].link}
-                        rel="noopener noreferrer"
-                    >
-                        <RetroButton
-                            text={`Whatsapp`}
-                            icon="/icons/whatsapp.svg"
-                            onClick={() => {}}
-                            isActive={false}
-                            msgNo={0}
-                            extraClass="mx-0! bg-retro_orange"
-                        />
-                    </a>
-                    <a
-                        target="_blank"
-                        href={user.social_links[2].link}
-                        rel="noopener noreferrer"
-                    >
-                        <RetroButton
-                            text={`Github`}
-                            icon="/icons/github.svg"
-                            onClick={() => {}}
-                            isActive={false}
-                            msgNo={0}
-                            extraClass="mx-0! bg-retro_orange"
-                        />
-                    </a>
+                    {user.social_links &&
+                        user.social_links.length > 0 &&
+                        user.social_links.map((link, idx) => {
+                            let icon = "/icons/link.svg";
+                            if (link.name.toLowerCase().includes("insta"))
+                                icon = "/icons/instagram.svg";
+                            else if (
+                                link.name.toLowerCase().includes("whatsapp")
+                            )
+                                icon = "/icons/whatsapp.svg";
+                            else if (link.name.toLowerCase().includes("github"))
+                                icon = "/icons/github.svg";
+                            return (
+                                <a
+                                    key={idx}
+                                    target="_blank"
+                                    href={link.link}
+                                    rel="noopener noreferrer"
+                                >
+                                    <RetroButton
+                                        text={link.name}
+                                        icon={icon}
+                                        onClick={() => {}}
+                                        isActive={false}
+                                        msgNo={0}
+                                        extraClass="mx-0! bg-retro_orange"
+                                    />
+                                </a>
+                            );
+                        })}
                 </div>
-
-                <div className="w-full flex justify-center pt-10">
-                    <RetroButton
-                        text={isLoggingOut ? "Logging out..." : "Logout"}
-                        icon={null}
-                        onClick={handleLogout}
-                        isActive={false}
-                        msgNo={0}
-                        extraClass={`mx-0! bg-retro_red text-white ${
-                            isLoggingOut ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                    />
-                </div>
+                <RetroButton
+                    text="Settings"
+                    icon={"/icons/settings.svg"}
+                    onClick={() => setShowSettings(true)}
+                    isActive={showSettings}
+                    msgNo={0}
+                    extraClass="mx-0!"
+                />
 
                 <div className="topQuestions text-secondary text-[22px] text-left w-full flex flex-col gap-3 items-start pt-10">
                     Top Questions
@@ -307,7 +261,7 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                 </div>
             </div>
 
-            {isOwnProfile && currentUser && isEditingProfile ? (
+            {isOwnProfile && currentUser && isEditingProfile && (
                 <OnboardingModal
                     initialAge={currentUser.age}
                     initialSex={currentUser.sex}
@@ -318,11 +272,34 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                         setIsEditingProfile(false);
                     }}
                 />
-            ) : null}
+            )}
             <div className="hidden lg:block bg-retro_border w-1"></div>
-            <div className="rhs hidden lg:flex lg:w-[35vw] h-fit">
-                <YourActivity notifications={notifications} />
+            {/* Desktop: show settings or activity on right. Mobile: show settings full view if open */}
+            <div
+                className={`rhs hidden lg:flex lg:w-[35vw] h-fit ${
+                    showSettings ? "" : ""
+                }`}
+            >
+                {showSettings ? (
+                    <SettingsView />
+                ) : (
+                    <YourActivity notifications={notifications} />
+                )}
             </div>
+            {/* Mobile full settings view */}
+            {showSettings && (
+                <div className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden">
+                    <div className="flex justify-end p-4">
+                        <button
+                            onClick={() => setShowSettings(false)}
+                            className="text-2xl"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <SettingsView />
+                </div>
+            )}
         </div>
     );
 }

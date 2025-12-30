@@ -22,14 +22,26 @@ interface Contact {
     last_online: string;
 }
 
+interface RoomEvent {
+    type: string;
+    room_id?: string;
+    user_count?: number;
+    ttl_started?: boolean;
+    expires_in?: number | null;
+    payload?: any;
+    [key: string]: any;
+}
+
 interface UseWebSocketProps {
     onNewMessage?: (message: Message) => void;
     onContactUpdate?: (contact: Contact) => void;
+    onRoomEvent?: (event: RoomEvent) => void;
 }
 
 export function useWebSocket({
     onNewMessage,
     onContactUpdate,
+    onRoomEvent,
 }: UseWebSocketProps) {
     const wsRef = useRef<WebSocket | null>(null);
     const onNewMessageRef = useRef<
@@ -38,6 +50,9 @@ export function useWebSocket({
     const onContactUpdateRef = useRef<
         UseWebSocketProps["onContactUpdate"] | undefined
     >(undefined);
+    const onRoomEventRef = useRef<UseWebSocketProps["onRoomEvent"] | undefined>(
+        undefined
+    );
     const connectInFlightRef = useRef(false);
     const reconnectTimerRef = useRef<number | null>(null);
     const retryCountRef = useRef(0);
@@ -53,7 +68,8 @@ export function useWebSocket({
     useEffect(() => {
         onNewMessageRef.current = onNewMessage;
         onContactUpdateRef.current = onContactUpdate;
-    }, [onNewMessage, onContactUpdate]);
+        onRoomEventRef.current = onRoomEvent;
+    }, [onNewMessage, onContactUpdate, onRoomEvent]);
 
     const connect = useCallback(async () => {
         try {
@@ -150,6 +166,21 @@ export function useWebSocket({
 
                         case "error":
                             console.error("WebSocket error:", data.message);
+                            break;
+
+                        // Private room events
+                        case "joined_room":
+                        case "room_created":
+                        case "room_not_found":
+                        case "left_room":
+                        case "user_joined_room":
+                        case "user_left_room":
+                        case "room_message":
+                        case "room_expired":
+                        case "room_ended":
+                            if (onRoomEventRef.current) {
+                                onRoomEventRef.current(data as RoomEvent);
+                            }
                             break;
 
                         default:
@@ -291,6 +322,18 @@ export function useWebSocket({
         [isAuthenticated]
     );
 
+    const sendRawMessage = useCallback(
+        (message: Record<string, any>) => {
+            if (wsRef.current && isAuthenticated) {
+                wsRef.current.send(JSON.stringify(message));
+                console.log("Sent raw message:", message);
+            } else {
+                console.warn("WebSocket not connected or not authenticated");
+            }
+        },
+        [isAuthenticated]
+    );
+
     useEffect(() => {
         // Auto-connect when component mounts
         connect();
@@ -309,6 +352,7 @@ export function useWebSocket({
         markMessageDelivered,
         markMessageRead,
         sendTypingIndicator,
+        sendRawMessage,
         connect,
         disconnect,
     };

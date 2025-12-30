@@ -23,6 +23,13 @@ const ChatView = dynamic(() => import("@/views/ChatView"), {
         </div>
     ),
 });
+const PrivateRoomsView = dynamic(() => import("@/views/PrivateRoomsView"), {
+    loading: () => (
+        <div className="flex items-center justify-center h-screen">
+            Loading...
+        </div>
+    ),
+});
 const QuizView = dynamic(() => import("@/views/QuizView"), {
     loading: () => (
         <div className="flex items-center justify-center h-screen">
@@ -52,7 +59,14 @@ const SettingsView = dynamic(() => import("@/views/SettingsView"), {
     ),
 });
 
-type View = "find" | "chat" | "quiz" | "profile" | "activity" | "settings";
+type View =
+    | "find"
+    | "chat"
+    | "privateRooms"
+    | "quiz"
+    | "profile"
+    | "activity"
+    | "settings";
 
 export default function AppPage() {
     const { user, isLoading, refreshUser } = useAuth();
@@ -105,6 +119,8 @@ export default function AppPage() {
                 );
             case "chat":
                 return <ChatView />;
+            case "privateRooms":
+                return <PrivateRoomsView />;
             case "quiz":
                 return <QuizView />;
             case "profile":

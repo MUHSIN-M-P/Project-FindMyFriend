@@ -7,7 +7,7 @@ export default function BottomBar() {
     const pathname = usePathname();
     const navLinks = [
         { name: "Find", href: "/find" },
-        { name: "Questions", href: "/quiz" },
+        { name: "Private Rooms", href: "/app" },
         { name: "Profile", href: "/profile" },
     ];
 

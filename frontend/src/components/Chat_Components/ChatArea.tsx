@@ -76,7 +76,7 @@ export default function ChatArea({
     }
 
     return (
-        <div className="chat w-full flex flex-col border-t-3 border-retro_border bg-background">
+        <div className="chat flex-1 flex flex-col border-t-3 border-retro_border bg-background">
             <div className="flex items-center border-b-2 border-retro_border w-full py-2 px-3 gap-4">
                 <div
                     className="header lg:hidden cursor-pointer"
@@ -104,7 +104,7 @@ export default function ChatArea({
                 </div>
             </div>
 
-            <div className="group h-[68vh] md:h-[72vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent px-5 flex flex-col-reverse">
+            <div className="group h-[68vh] md:h-[71vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent px-5 flex flex-col-reverse">
                 <div className="flex flex-col">
                     {isLoadingMessages ? (
                         <div className="text-center py-4">

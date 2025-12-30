@@ -10,12 +10,20 @@ export default function OnboardingModal({
     initialSex,
     initialBio,
     initialHobbies,
+    initialSocials,
     onCompleted,
 }: {
     initialAge?: number | null;
     initialSex?: string | null;
     initialBio?: string | null;
     initialHobbies?: string[] | null;
+    initialSocials?: {
+        instagram?: string;
+        whatsapp?: string;
+        github?: string;
+        X?: string;
+        linkedin?: string;
+    };
     onCompleted: () => Promise<void> | void;
 }) {
     const [age, setAge] = useState<string>(
@@ -30,6 +38,14 @@ export default function OnboardingModal({
     );
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [socials, setSocials] = useState({
+        instagram: initialSocials?.instagram ?? "",
+        whatsapp: initialSocials?.whatsapp ?? "",
+        github: initialSocials?.github ?? "",
+        X: initialSocials?.X ?? "",
+        linkedin: initialSocials?.linkedin ?? "",
+    });
 
     const hobbies = useMemo(() => {
         return hobbiesText
@@ -51,11 +67,16 @@ export default function OnboardingModal({
         if (isSaving) return;
         setError(null);
 
-        if (!canSubmit) {
-            setError("Please fill all required fields.");
+        if (page === 1) {
+            if (!canSubmit) {
+                setError("Please fill all required fields.");
+                return;
+            }
+            setPage(2);
             return;
         }
 
+        // Page 2: Save profile with socials
         setIsSaving(true);
         try {
             const res = await fetch("/api/auth/profile", {
@@ -67,6 +88,7 @@ export default function OnboardingModal({
                     sex: sex as SexValue,
                     bio,
                     hobbies,
+                    socials,
                 }),
             });
 
@@ -81,7 +103,9 @@ export default function OnboardingModal({
                         ? data
                         : data?.error || data?.message;
 
-                setError(message || `Failed to save profile (HTTP ${res.status})`);
+                setError(
+                    message || `Failed to save profile (HTTP ${res.status})`
+                );
                 return;
             }
 
@@ -101,59 +125,161 @@ export default function OnboardingModal({
                     Complete your profile
                 </div>
                 <div className="mt-1 text-sm">
-                    These details are required to continue.
+                    {page === 1
+                        ? "These details are required to continue."
+                        : "Add your social media links (optional)."}
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-4">
-                    <label className="flex flex-col gap-1">
-                        <span className="text-sm font-semibold">Age *</span>
-                        <input
-                            type="number"
-                            min={1}
-                            value={age}
-                            onChange={(e) => setAge(e.target.value)}
-                            className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
-                        />
-                    </label>
+                    {page === 1 ? (
+                        <>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Age *
+                                </span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={age}
+                                    onChange={(e) => setAge(e.target.value)}
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
 
-                    <label className="flex flex-col gap-1">
-                        <span className="text-sm font-semibold">Sex *</span>
-                        <select
-                            value={sex}
-                            onChange={(e) => setSex(e.target.value)}
-                            className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
-                        >
-                            <option value="" disabled>
-                                Select
-                            </option>
-                            <option value="M">M</option>
-                            <option value="F">F</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Sex *
+                                </span>
+                                <select
+                                    value={sex}
+                                    onChange={(e) => setSex(e.target.value)}
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                >
+                                    <option value="" disabled>
+                                        Select
+                                    </option>
+                                    <option value="M">M</option>
+                                    <option value="F">F</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </label>
 
-                    <label className="flex flex-col gap-1">
-                        <span className="text-sm font-semibold">
-                            Hobbies (comma separated) *
-                        </span>
-                        <input
-                            type="text"
-                            value={hobbiesText}
-                            onChange={(e) => setHobbiesText(e.target.value)}
-                            placeholder="e.g. Movies, Football, Music"
-                            className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
-                        />
-                    </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Hobbies (comma separated) *
+                                </span>
+                                <input
+                                    type="text"
+                                    value={hobbiesText}
+                                    onChange={(e) =>
+                                        setHobbiesText(e.target.value)
+                                    }
+                                    placeholder="e.g. Movies, Football, Music"
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
 
-                    <label className="flex flex-col gap-1">
-                        <span className="text-sm font-semibold">Bio *</span>
-                        <textarea
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            rows={4}
-                            className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
-                        />
-                    </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Bio *
+                                </span>
+                                <textarea
+                                    value={bio}
+                                    onChange={(e) => setBio(e.target.value)}
+                                    rows={4}
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
+                        </>
+                    ) : (
+                        <>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Instagram
+                                </span>
+                                <input
+                                    type="text"
+                                    value={socials.instagram}
+                                    onChange={(e) =>
+                                        setSocials((s) => ({
+                                            ...s,
+                                            instagram: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="Instagram username"
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Whatsapp
+                                </span>
+                                <input
+                                    type="text"
+                                    value={socials.whatsapp}
+                                    onChange={(e) =>
+                                        setSocials((s) => ({
+                                            ...s,
+                                            whatsapp: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="Whatsapp number"
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Github
+                                </span>
+                                <input
+                                    type="text"
+                                    value={socials.github}
+                                    onChange={(e) =>
+                                        setSocials((s) => ({
+                                            ...s,
+                                            github: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="Github username"
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    Twitter
+                                </span>
+                                <input
+                                    type="text"
+                                    value={socials.X}
+                                    onChange={(e) =>
+                                        setSocials((s) => ({
+                                            ...s,
+                                            X: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="Twitter username"
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
+                            <label className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">
+                                    LinkedIn
+                                </span>
+                                <input
+                                    type="text"
+                                    value={socials.linkedin}
+                                    onChange={(e) =>
+                                        setSocials((s) => ({
+                                            ...s,
+                                            linkedin: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="LinkedIn username"
+                                    className="w-full border-2 border-retro_border bg-background px-3 py-2 text-secondary"
+                                />
+                            </label>
+                        </>
+                    )}
 
                     {error ? (
                         <div className="border-2 border-retro_red bg-background px-3 py-2 text-sm">
@@ -163,7 +289,15 @@ export default function OnboardingModal({
 
                     <div className="flex justify-end">
                         <RetroButton
-                            text={isSaving ? "Saving..." : "Save & Continue"}
+                            text={
+                                isSaving
+                                    ? page === 2
+                                        ? "Saving..."
+                                        : "Next..."
+                                    : page === 1
+                                    ? "Next"
+                                    : "Save & Continue"
+                            }
                             icon={null}
                             onClick={handleSubmit}
                             isActive={true}

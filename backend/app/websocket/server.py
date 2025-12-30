@@ -33,9 +33,99 @@ def authenticate_token(token: str) -> Optional[int]:
         return payload.get("user_id")
     except Exception:
         return None
+    
+ROOM_TIME_SECONDS = 300
+
+# =======================
+# Private Rooms (In-Memory)
+# TTL starts when 2nd socket joins
+# =======================
+private_rooms: Dict[str, dict] = {}
+
+
+def create_private_room(room_id: str, creator_user_id: Optional[int] = None):
+    if room_id in private_rooms:
+        return
+
+    private_rooms[room_id] = {
+        "users": set(),
+        "expires_at": None,
+        "task": None,
+        "ttl_started": False,
+        "creator_user_id": creator_user_id,
+    }
+    print(f"Room {room_id} created (TTL not started)")
+
+
+# Backwards-compat alias (if any older code calls it)
+def create_room(room_id: str):
+    create_private_room(room_id)
+
+
+async def destroy_private_rooms(roomid: str):
+    await asyncio.sleep(ROOM_TIME_SECONDS)
+
+    room = private_rooms.get(roomid)
+    if not room :
+        return
+    for ws in list(room["users"]):
+        try: 
+            await ws.send(json.dumps({
+                "type":"room_expired",
+                "room_id" : roomid
+            }))
+            await ws.close()
+        except Exception as e:
+             print(f"Error in handling destroying romm : {roomid} - {e}")
+    
+    private_rooms.pop(roomid, None)
+    print(f"Room {roomid} destroyed after TTL")
+
+def start_room_ttl(room_id: str):
+    room = private_rooms.get(room_id)
+    if not room or room.get("ttl_started"):
+        return
+    loop = asyncio.get_running_loop()
+    task = loop.create_task(destroy_private_rooms(room_id))
+
+    room["task"]=task
+    room["expires_at"]=loop.time() + ROOM_TIME_SECONDS
+    room["ttl_started"]=True
+    print(f"TTL started for room {room_id}")
+
+def _room_expires_in_seconds(room_id: str) -> Optional[int]:
+    room = private_rooms.get(room_id)
+    if not room or not room.get("ttl_started") or room.get("expires_at") is None:
+        return None
+    loop = asyncio.get_running_loop()
+    return max(0, int(room["expires_at"] - loop.time()))
+
+
+async def end_private_room(room_id: str):
+    """Manually ending a room"""
+    room = private_rooms.get(room_id)
+    if not room:
+        return
+    if room.get("task"):
+        room["task"].cancel()
+
+    for ws in list(room["users"]):
+        try:
+            await ws.send(json.dumps({
+                "type": "room_ended",
+                "room_id": room_id
+            }))
+            await ws.close()
+        except Exception as e:
+            print(f"Error notifying user in room {room_id}: {e}")
+    
+    # Remove room
+    private_rooms.pop(room_id, None)
+    print(f"Room {room_id} manually ended")
+    
 
 async def send_to_user(user_id: int, message: dict):
-    """Send message to user if they're online locally"""
+    """ if they're online locally"""
     sockets = local_connections.get(user_id)
     if not sockets:
         return
@@ -76,10 +166,287 @@ def schedule_send_to_user(user_id: int, message: dict) -> bool:
         print(f"Failed to schedule WS send to user {user_id}: {e}")
         return False
 
-async def handle_message(websocket, sender_id: int, message_data: dict):
-    """Handle incoming messages"""
-    message_type = message_data.get("type")
+async def handle_create_private_room(websocket, room_id: str):
+    if not room_id:
+        await websocket.send(json.dumps({
+            "type": "error",
+            "message": "room_id required"
+        }))
+        return
+
+    create_private_room(room_id)
+    await websocket.send(json.dumps({
+        "type": "room_created",
+        "room_id": room_id,
+    }))
+
+    await handle_join_private_room(websocket, room_id)
+
+
+async def handle_create_private_room_for_user(websocket, sender_id: int, room_id: str):
+    if not room_id:
+        await websocket.send(json.dumps({
+            "type": "error",
+            "message": "room_id required"
+        }))
+        return
+
+    room = private_rooms.get(room_id)
+    if room is None:
+        create_private_room(room_id, creator_user_id=sender_id)
+    else:
+        # If it was created without a creator (older state), claim it.
+        if room.get("creator_user_id") is None:
+            room["creator_user_id"] = sender_id
+
+    await websocket.send(json.dumps({
+        "type": "room_created",
+        "room_id": room_id,
+    }))
+
+    await handle_join_private_room_for_user(websocket, sender_id, room_id)
+
+
+async def handle_join_private_room(websocket, room_id: str):
+    """Handle joining a private room"""
+    if not room_id:
+        await websocket.send(json.dumps({
+            "type": "error",
+            "message": "room_id required"
+        }))
+        return
+
+    # IMPORTANT: joining should NOT create rooms.
+    # This prevents users from joining random codes that don't exist.
+    room = private_rooms.get(room_id)
+
+    if not room:
+        await websocket.send(json.dumps({
+            "type": "room_not_found",
+            "room_id": room_id,
+            "message": "Room not found"
+        }))
+        return
+
+    # Add user to room
+    room["users"].add(websocket)
+    user_count = len(room["users"])
+
+    # Start TTL when 2nd socket joins
+    if user_count == 2 and not room["ttl_started"]:
+        start_room_ttl(room_id)
+
+    expires_in = _room_expires_in_seconds(room_id)
+
+    await websocket.send(json.dumps({
+        "type": "joined_room",
+        "room_id": room_id,
+        "user_count": user_count,
+        "ttl_started": room["ttl_started"],
+        "expires_in": expires_in,
+        "is_creator": False,
+    }))
     
+    # Notify other users in room
+    for ws in list(room["users"]):
+        if ws != websocket:
+            try:
+                    await ws.send(json.dumps({
+                        "type": "user_joined_room",
+                        "room_id": room_id,
+                        "user_count": user_count,
+                        "ttl_started": room["ttl_started"],
+                        "expires_in": expires_in,
+                    }))
+            except Exception:
+                room["users"].discard(ws)
+
+
+async def handle_join_private_room_for_user(websocket, sender_id: int, room_id: str):
+    """Join handler that can also provide is_creator flag."""
+    if not room_id:
+        await websocket.send(json.dumps({
+            "type": "error",
+            "message": "room_id required"
+        }))
+        return
+
+    room = private_rooms.get(room_id)
+    if not room:
+        await websocket.send(json.dumps({
+            "type": "room_not_found",
+            "room_id": room_id,
+            "message": "Room not found"
+        }))
+        return
+
+    room["users"].add(websocket)
+    user_count = len(room["users"])
+
+    if user_count == 2 and not room["ttl_started"]:
+        start_room_ttl(room_id)
+
+    expires_in = _room_expires_in_seconds(room_id)
+    is_creator = bool(sender_id) and room.get("creator_user_id") == sender_id
+
+    await websocket.send(json.dumps({
+        "type": "joined_room",
+        "room_id": room_id,
+        "user_count": user_count,
+        "ttl_started": room["ttl_started"],
+        "expires_in": expires_in,
+        "is_creator": is_creator,
+    }))
+
+    for ws in list(room["users"]):
+        if ws != websocket:
+            try:
+                await ws.send(json.dumps({
+                    "type": "user_joined_room",
+                    "room_id": room_id,
+                    "user_count": user_count,
+                    "ttl_started": room["ttl_started"],
+                    "expires_in": expires_in,
+                }))
+            except Exception:
+                room["users"].discard(ws)
+
+
+async def handle_leave_private_room(websocket, room_id: str):
+    if not room_id:
+        return
+
+    room = private_rooms.get(room_id)
+    if not room:
+        # idempotent
+        await websocket.send(json.dumps({
+            "type": "left_room",
+            "room_id": room_id,
+        }))
+        return
+
+    if websocket in room.get("users", set()):
+        room["users"].discard(websocket)
+
+    remaining = len(room["users"])
+    expires_in = None
+    try:
+        expires_in = _room_expires_in_seconds(room_id)
+    except Exception:
+        expires_in = None
+
+    # Ack to leaver
+    try:
+        await websocket.send(json.dumps({
+            "type": "left_room",
+            "room_id": room_id,
+        }))
+    except Exception:
+        pass
+
+    # Notify remaining sockets
+    for ws in list(room["users"]):
+        try:
+            await ws.send(json.dumps({
+                "type": "user_left_room",
+                "room_id": room_id,
+                "user_count": remaining,
+                "ttl_started": room.get("ttl_started", False),
+                "expires_in": expires_in,
+            }))
+        except Exception:
+            room["users"].discard(ws)
+
+    # If empty, delete
+    if remaining == 0:
+        if room.get("task"):
+            try:
+                room["task"].cancel()
+            except Exception:
+                pass
+        private_rooms.pop(room_id, None)
+
+
+async def handle_room_message(websocket, sender_id: int, room_id: str, payload: dict):
+    """Handle message broadcast in a private room"""
+    if not room_id or not payload:
+        return
+
+    room = private_rooms.get(room_id)
+    if not room:
+        await websocket.send(json.dumps({
+            "type": "room_expired",
+            "room_id": room_id
+        }))
+        return
+    
+    # Broadcast to all other users in room
+    for ws in list(room["users"]):
+        if ws != websocket:
+            try:
+                await ws.send(json.dumps({
+                    "type": "room_message",
+                    "room_id": room_id,
+                    "payload": payload,
+                    "sender_id": sender_id,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }))
+            except Exception:
+                room["users"].discard(ws)
+
+
+async def handle_end_room(websocket, sender_id: int, room_id: str):
+    """Handle manual room termination"""
+    if not room_id:
+        return
+
+    room = private_rooms.get(room_id)
+    if not room:
+        return
+
+    creator_user_id = room.get("creator_user_id")
+    if creator_user_id is not None and creator_user_id != sender_id:
+        await websocket.send(json.dumps({
+            "type": "error",
+            "message": "Only the creator can end the room"
+        }))
+        return
+
+    await end_private_room(room_id)
+
+
+async def handle_message(websocket, sender_id: int, message_data: dict):
+    """Handle incoming messages - router function"""
+    message_type = message_data.get("type")
+
+    # Private room handlers
+    if message_type == "create_private_room":
+        room_id = message_data.get("room_id")
+        await handle_create_private_room_for_user(websocket, sender_id, room_id)
+        return
+
+    if message_type == "join_private_room":
+        room_id = message_data.get("room_id")
+        await handle_join_private_room_for_user(websocket, sender_id, room_id)
+        return
+
+    if message_type == "leave_private_room":
+        room_id = message_data.get("room_id")
+        await handle_leave_private_room(websocket, room_id)
+        return
+
+    if message_type == "end_room":
+        room_id = message_data.get("room_id")
+        await handle_end_room(websocket, sender_id, room_id)
+        return
+
+    if message_type == "room_message":
+        room_id = message_data.get("room_id")
+        payload = message_data.get("payload")
+        await handle_room_message(websocket, sender_id, room_id, payload)
+        return
+    
+    # 1-to-1 chat handler
     if message_type == "send_message":
         recipient_id = message_data.get("recipient_id")
         content = message_data.get("content")
@@ -91,17 +458,14 @@ async def handle_message(websocket, sender_id: int, message_data: dict):
         from app.services.chat_service import ChatService
         from app.models import User
 
-        # WebSocket server runs in its own thread; ensure DB operations have app context.
         message_payload = None
         try:
             if flask_app is not None:
                 with flask_app.app_context():
                     message = ChatService.send_message(sender_id, recipient_id, content, msg_type)
-                    # Get sender's profile picture
                     sender = db.session.get(User, sender_id)
                     sender_pfp = sender.profile_pic if sender and sender.profile_pic else "/avatars/male_avatar.png"
                     
-                    # Extract data while session is active to avoid DetachedInstanceError
                     message_payload = {
                         "id": message.id,
                         "sender_id": sender_id,
@@ -133,7 +497,6 @@ async def handle_message(websocket, sender_id: int, message_data: dict):
             return
         
         if message_payload:
-            # Send to recipient if online
             await send_to_user(recipient_id, {
                 "type": "new_message",
                 "data": message_payload
@@ -198,6 +561,44 @@ async def websocket_handler(websocket, path):
             else:
                 local_connections.pop(user_id, None)
                 redis_manager.set_user_offline(user_id)
+
+            # Remove websocket from all private rooms + cleanup empty rooms
+            for room_id, room in list(private_rooms.items()):
+                if websocket in room.get("users", set()):
+                    room["users"].discard(websocket)
+                    try:
+                        await websocket.close()
+                    except Exception:
+                        pass
+
+                    # Notify remaining users
+                    remaining = len(room["users"])
+                    expires_in = None
+                    try:
+                        expires_in = _room_expires_in_seconds(room_id)
+                    except Exception:
+                        expires_in = None
+
+                    for ws in list(room["users"]):
+                        try:
+                            await ws.send(json.dumps({
+                                "type": "user_left_room",
+                                "room_id": room_id,
+                                "user_count": remaining,
+                                "ttl_started": room.get("ttl_started", False),
+                                "expires_in": expires_in,
+                            }))
+                        except Exception:
+                            room["users"].discard(ws)
+
+                    # If room is empty, destroy it
+                    if remaining == 0:
+                        if room.get("task"):
+                            try:
+                                room["task"].cancel()
+                            except Exception:
+                                pass
+                        private_rooms.pop(room_id, None)
             print(f"User {user_id} disconnected")
 
 async def start_websocket_server(host: str = "0.0.0.0", port: int = 8765):

@@ -1,7 +1,13 @@
 "use client";
 import RetroButton from "./retroButton";
 
-type View = "find" | "chat" | "quiz" | "profile" | "activity" | "settings";
+type View =
+    | "find"
+    | "chat"
+    | "privateRooms"
+    | "profile"
+    | "activity"
+    | "settings";
 
 interface NavbarProps {
     currentView: View;
@@ -11,8 +17,8 @@ interface NavbarProps {
 const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
     const navLinks = [
         { name: "Find", view: "find" as View },
-        { name: "Questions", view: "quiz" as View },
         { name: "Profile", view: "profile" as View },
+        { name: "Private Rooms", view: "privateRooms" as View },
     ];
     const res = { data: { msgNo: 5, notifNo: 1 } }; // await axios.get("___")
     const msgNo = res.data.msgNo;
@@ -21,13 +27,20 @@ const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
     // Determine title based on current path
     const getNavTitle = () => {
         switch (currentView) {
-            case "find": return "Find Your Tribe";
-            case "quiz": return "Answer Questions";
-            case "profile": return "Your Profile";
-            case "chat": return "Your Messages";
-            case "activity": return "Your Activity";
-            case "settings": return "Your Settings";
-            default: return "UniSphere";
+            case "find":
+                return "Find Your Tribe";
+            case "privateRooms":
+                return "Private Rooms";
+            case "profile":
+                return "Your Profile";
+            case "chat":
+                return "Your Messages";
+            case "activity":
+                return "Your Activity";
+            case "settings":
+                return "Your Settings";
+            default:
+                return "UniSphere";
         }
     };
 
@@ -35,7 +48,7 @@ const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
         <div className="flex">
             <div className="h-[27px]"></div>
             <nav className="min-h-[10vh] bg-background md:py-8 flex items-center justify-between w-9/10 mx-auto">
-                <div 
+                <div
                     onClick={() => onViewChange("find")}
                     className="main_title font-bungee text-2xl md:text-4xl text-secondary cursor-pointer"
                 >
@@ -45,7 +58,10 @@ const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
                     {navLinks.map((link) => {
                         const isActive = currentView === link.view;
                         return (
-                            <div key={link.name} onClick={() => onViewChange(link.view)}>
+                            <div
+                                key={link.name}
+                                onClick={() => onViewChange(link.view)}
+                            >
                                 <RetroButton
                                     text={link.name}
                                     icon={null}

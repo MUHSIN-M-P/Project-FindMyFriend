@@ -3,7 +3,13 @@
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 
-type View = "find" | "chat" | "quiz" | "profile" | "activity" | "settings";
+type View =
+    | "find"
+    | "chat"
+    | "privateRooms"
+    | "profile"
+    | "activity"
+    | "settings";
 
 interface NavbarWrapperProps {
     currentView?: View;
