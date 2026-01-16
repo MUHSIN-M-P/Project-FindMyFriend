@@ -6,8 +6,3 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-# Generate the initial migration - create migration script
-# alembic revision --autogenerate -m "init-setup"
-
-# Apply the migration - run on migrations folder
-# alembic upgrade head
