@@ -46,5 +46,10 @@ app.register_blueprint(websocket_bp)
 from app.websocket.service import init_websocket_service
 init_websocket_service(app)
 
-with app.app_context():
-    db.create_all()
+# Create tables only if DATABASE_URL is set (avoid crash during import checks)
+if database_url:
+    with app.app_context():
+        try:
+            db.create_all()
+        except Exception as e:
+            print(f"Warning: Could not create tables on startup: {e}")
