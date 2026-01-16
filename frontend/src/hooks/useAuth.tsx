@@ -19,6 +19,10 @@ interface User {
     hobbies?: string[];
     bio?: string;
     last_seen?: string;
+    social_links?: Array<{
+        name: string;
+        link: string;
+    }>;
 }
 
 interface AuthContextType {

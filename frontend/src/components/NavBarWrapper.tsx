@@ -7,6 +7,7 @@ type View =
     | "find"
     | "chat"
     | "privateRooms"
+    | "quiz"
     | "profile"
     | "activity"
     | "settings";

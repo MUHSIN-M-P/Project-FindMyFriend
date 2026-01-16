@@ -5,6 +5,7 @@ type View =
     | "find"
     | "chat"
     | "privateRooms"
+    | "quiz"
     | "profile"
     | "activity"
     | "settings";
@@ -35,6 +36,8 @@ const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
                 return "Your Profile";
             case "chat":
                 return "Your Messages";
+            case "quiz":
+                return "Quiz Time";
             case "activity":
                 return "Your Activity";
             case "settings":
