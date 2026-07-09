@@ -154,55 +154,55 @@ export default function Home() {
 
                 {/* Features Section */}
                 <section className="w-full max-w-[1400px] mt-24 pt-16">
-                    <h2 className="text-center font-bungee text-2xl md:text-3xl tracking-wider mb-6">
+                    <h2 className="text-center font-bungee text-2xl md:text-3xl tracking-wider mb-8 text-secondary">
                         FEATURES
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="rounded-3xl shadow-3 bg-background p-6 flex flex-col gap-3">
-                            <h3 className="font-poppins font-bold text-xl">
-                                Find Matches
-                            </h3>
-                            <p className="text-sm text-secondary/80">
-                                Discover people with shared interests.
-                            </p>
-                            <button
-                                onClick={handleJoinNow}
-                                className="mt-2 py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all"
-                            >
-                                Open
-                            </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        {/* Feature Card Example - Add more features by duplicating this block */}
+                        <div className="rounded-2xl bg-background border border-primary/40 p-6 flex flex-col gap-3 items-center hover:shadow-lg transition-shadow">
+                            <div className="bg-primary/10 rounded-full p-2 mb-1">
+                                {/* User/People icon for Find Matches */}
+                                <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-5a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            </div>
+                            <h3 className="font-bungee text-base text-primary">Find Matches</h3>
+                            <p className="text-xs text-secondary/80 text-center">Discover people with shared interests and connect instantly.</p>
                         </div>
 
-                        <div className="rounded-3xl shadow-3 bg-background p-6 flex flex-col gap-3">
-                            <h3 className="font-poppins font-bold text-xl">
-                                Chat
-                            </h3>
-                            <p className="text-sm text-secondary/80">
-                                Start conversations and build your tribe.
-                            </p>
-                            <button
-                                onClick={handleJoinNow}
-                                className="mt-2 py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all w-fit"
-                            >
-                                Open
-                            </button>
+                        <div className="rounded-2xl bg-background border border-primary/40 p-6 flex flex-col gap-3 items-center hover:shadow-lg transition-shadow">
+                            <div className="bg-primary/10 rounded-full p-2 mb-1">
+                                {/* Chat bubble icon for Real-time Chat */}
+                                <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                                </svg>
+                            </div>
+                            <h3 className="font-bungee text-base text-primary">Real-time Chat</h3>
+                            <p className="text-xs text-secondary/80 text-center">Start conversations, share ideas, and build your tribe in real time.</p>
                         </div>
 
-                        <div className="rounded-3xl shadow-3 bg-background p-6 flex flex-col gap-3">
-                            <h3 className="font-poppins font-bold text-xl">
-                                Quiz
-                            </h3>
-                            <p className="text-sm text-secondary/80">
-                                Answer questions to improve your matches.
-                            </p>
-                            <button
-                                onClick={handleJoinNow}
-                                className="mt-2 py-2 px-4 rounded-xl cursor-pointer tracking-wide text-sm font-poppins font-semibold shadow-button bg-background text-secondary hover:bg-secondary hover:text-white transition-all w-fit"
-                            >
-                                Open
-                            </button>
+                        <div className="rounded-2xl bg-background border border-primary/40 p-6 flex flex-col gap-3 items-center hover:shadow-lg transition-shadow">
+                            <div className="bg-primary/10 rounded-full p-2 mb-1">
+                                {/* Quiz/Question icon for Quiz & Activities */}
+                                <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 16v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" />
+                                </svg>
+                            </div>
+                            <h3 className="font-bungee text-base text-primary">Quiz & Activities</h3>
+                            <p className="text-xs text-secondary/80 text-center">Answer fun questions to improve your matches and unlock new connections.</p>
                         </div>
+
+                        {/* Example for adding more features: Duplicate the block below and update content/icon */}
+                        {/*
+                        <div className="rounded-2xl bg-background border border-primary/40 p-6 flex flex-col gap-3 items-center hover:shadow-lg transition-shadow">
+                            <div className="bg-primary/10 rounded-full p-2 mb-1">
+                                <svg className="w-7 h-7 text-primary" ...icon... />
+                            </div>
+                            <h3 className="font-bungee text-base text-primary">Feature Title</h3>
+                            <p className="text-xs text-secondary/80 text-center">Feature description goes here.</p>
+                        </div>
+                        */}
                     </div>
                 </section>
             </div>

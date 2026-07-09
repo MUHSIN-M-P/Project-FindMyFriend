@@ -3,6 +3,7 @@ from app.models import db, User, Conversations, Messages, MessageStatus
 from app.websocket.redis_manager import redis_manager
 from app.services.auth_service import AuthService
 from typing import List, Optional, Dict, Any
+from datetime import datetime
 
 class ChatService:
     
@@ -59,14 +60,32 @@ class ChatService:
         )
     
     @staticmethod
-    def send_message(sender_id: int, recipient_id: int, content: str, message_type: str = "text") -> Messages:
+    def send_message(
+        sender_id: int,
+        recipient_id: int,
+        content: str,
+        message_type: str = "text",
+        client_id: Optional[str] = None,
+        mark_delivered: bool = False,
+    ) -> Messages:
         conversation = ChatService.get_or_create_conversation(sender_id, recipient_id)
+
+        # Idempotency / dedupe for retries (e.g. offline queue flush, network retries)
+        if client_id:
+            existing = db.session.execute(
+                select(Messages).where(
+                    and_(Messages.sender_id == sender_id, Messages.client_id == client_id)
+                )
+            ).scalar_one_or_none()
+            if existing:
+                return existing
         
         message = Messages(
             conversation_id=conversation.id,
             sender_id=sender_id,
             content=content,
-            message_type=message_type
+            message_type=message_type,
+            client_id=client_id,
         )
         db.session.add(message)
         db.session.flush()  # Get message ID
@@ -74,7 +93,8 @@ class ChatService:
         status = MessageStatus(
             message_id=message.id,
             recipient_id=recipient_id,
-            status="sent"
+            status="delivered" if mark_delivered else "sent",
+            delivered_at=datetime.utcnow() if mark_delivered else None,
         )
         db.session.add(status)
         db.session.commit()
@@ -209,6 +229,11 @@ class ChatService:
                 "timestamp": msg.created_at.isoformat(),
                 "message_type": msg.message_type
             }
+
+            if msg.sender_id == current_user_id:
+                message_data["status"] = msg.status.status if msg.status else "sent"
+                if getattr(msg, "client_id", None):
+                    message_data["clientId"] = msg.client_id
             
             # Add profile picture for received messages
             if msg.sender_id != current_user_id:

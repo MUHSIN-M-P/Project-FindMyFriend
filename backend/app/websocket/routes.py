@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.utils.decorators import jwt_required
+from app.services.room_service import RoomCodeService
 import jwt
 import os
 from datetime import datetime, timedelta
@@ -74,4 +75,93 @@ def get_online_users():
     return jsonify({
         "online_users": online_users,
         "count": len(online_users)
+    })
+
+# ===== ROOM CODE ENDPOINTS =====
+
+@websocket_bp.route('/room/generate', methods=['POST'])
+@jwt_required
+def generate_room_code():
+    """
+    Generate a unique room code
+    Backend ensures uniqueness and no collisions
+    """
+    try:
+        room_code = RoomCodeService.generate_room_code()
+        
+        return jsonify({
+            "success": True,
+            "room_code": room_code,
+            "formatted": RoomCodeService.format_room_code(room_code)
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@websocket_bp.route('/room/validate', methods=['POST'])
+def validate_room_code():
+    """
+    Validate room code format and check if it exists
+    """
+    data = request.get_json()
+    code = data.get('code', '')
+    
+    if not code:
+        return jsonify({
+            "valid": False,
+            "error": "Room code is required"
+        }), 400
+    
+    # Normalize code
+    normalized = RoomCodeService.normalize_room_code(code)
+    
+    # Validate format
+    is_valid_format = RoomCodeService.validate_room_code(normalized)
+    
+    if not is_valid_format:
+        return jsonify({
+            "valid": False,
+            "error": "Invalid room code format. Must be 6 alphanumeric characters."
+        })
+    
+    # Check if exists
+    exists = RoomCodeService.check_room_exists(normalized)
+    
+    return jsonify({
+        "valid": is_valid_format,
+        "exists": exists,
+        "normalized": normalized,
+        "formatted": RoomCodeService.format_room_code(normalized)
+    })
+
+@websocket_bp.route('/room/<string:code>/info', methods=['GET'])
+@jwt_required
+def get_room_info(code):
+    """
+    Get room information (user count, TTL, etc.)
+    """
+    normalized = RoomCodeService.normalize_room_code(code)
+    
+    room_info = RoomCodeService.get_room_info(normalized)
+    
+    if not room_info:
+        return jsonify({
+            "error": "Room not found"
+        }), 404
+    
+    return jsonify(room_info)
+
+@websocket_bp.route('/room/<string:code>/exists', methods=['GET'])
+def check_room_exists(code):
+    """
+    Quick check if room exists (no auth required for joining)
+    """
+    normalized = RoomCodeService.normalize_room_code(code)
+    exists = RoomCodeService.check_room_exists(normalized)
+    
+    return jsonify({
+        "exists": exists,
+        "room_code": normalized
     })

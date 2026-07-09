@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateRoomCode, formatRoomCode } from "@/utils/roomCode";
 import RetroButton from "@/components/retroButton";
 
@@ -15,8 +15,33 @@ export default function CreateRoomModal({
     onClose,
     onCreateRoom,
 }: CreateRoomModalProps) {
-    const [roomCode] = useState(() => generateRoomCode());
+    const [roomCode, setRoomCode] = useState<string>("");
     const [copied, setCopied] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Generate room code from backend when modal opens
+    useEffect(() => {
+        if (isVisible && !roomCode) {
+            generateCodeFromBackend();
+        }
+    }, [isVisible]);
+
+    const generateCodeFromBackend = async () => {
+        setIsGenerating(true);
+        setError(null);
+
+        try {
+            // Backend generates unique code (no collisions)
+            const code = await generateRoomCode();
+            setRoomCode(code);
+        } catch (err) {
+            console.error("Failed to generate room code:", err);
+            setError("Failed to generate room code. Please try again.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     if (!isVisible) return null;
 
@@ -27,6 +52,7 @@ export default function CreateRoomModal({
     };
 
     const handleCreateRoom = () => {
+        if (!roomCode) return;
         onCreateRoom(roomCode);
         onClose();
     };
@@ -42,16 +68,35 @@ export default function CreateRoomModal({
                     person joins.
                 </p>
 
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                        <button
+                            onClick={generateCodeFromBackend}
+                            className="ml-2 underline"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
                 <div className="bg-gray-100 rounded-lg p-4 mb-4 text-center">
                     <p className="text-xs text-gray-500 mb-2">Room Code</p>
-                    <p className="text-3xl font-bold tracking-wider font-mono">
-                        {formatRoomCode(roomCode)}
-                    </p>
+                    {isGenerating ? (
+                        <p className="text-xl text-gray-400 animate-pulse">
+                            Generating...
+                        </p>
+                    ) : (
+                        <p className="text-3xl font-bold tracking-wider font-mono">
+                            {formatRoomCode(roomCode)}
+                        </p>
+                    )}
                 </div>
 
                 <button
                     onClick={handleCopyCode}
-                    className="w-full mb-4 py-2 px-4 rounded-lg border-2 border-retro_border bg-primary/10 hover:bg-primary/20 transition-colors"
+                    disabled={isGenerating || !roomCode}
+                    className="w-full mb-4 py-2 px-4 rounded-lg border-2 border-retro_border bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {copied ? "✓ Copied!" : "📋 Copy Code"}
                 </button>
@@ -69,9 +114,9 @@ export default function CreateRoomModal({
                         text="Create Room"
                         icon={null}
                         onClick={handleCreateRoom}
-                        isActive={false}
+                        isActive={!isGenerating && !!roomCode}
                         msgNo={0}
-                        extraClass="flex-1 bg-primary text-white"
+                        extraClass="flex-1 bg-primary text-white disabled:opacity-50"
                     />
                 </div>
             </div>

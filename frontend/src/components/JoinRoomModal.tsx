@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { isValidRoomCode } from "@/utils/roomCode";
+import { validateRoomCode, normalizeRoomCode } from "@/utils/roomCode";
 import RetroButton from "@/components/retroButton";
 
 interface JoinRoomModalProps {
@@ -17,26 +17,48 @@ export default function JoinRoomModal({
 }: JoinRoomModalProps) {
     const [roomCode, setRoomCode] = useState("");
     const [error, setError] = useState("");
+    const [isValidating, setIsValidating] = useState(false);
 
     if (!isVisible) return null;
 
-    const handleJoinRoom = () => {
-        const code = roomCode.trim().toUpperCase().replace(/-/g, "");
+    const handleJoinRoom = async () => {
+        const code = normalizeRoomCode(roomCode);
 
         if (!code) {
             setError("Please enter a room code");
             return;
         }
 
-        if (!isValidRoomCode(code)) {
-            setError("Invalid room code format");
-            return;
-        }
-
-        onJoinRoom(code);
-        onClose();
-        setRoomCode("");
+        setIsValidating(true);
         setError("");
+
+        try {
+            // Validate with backend (checks format and existence)
+            const validation = await validateRoomCode(code);
+
+            if (!validation.valid) {
+                setError(validation.error || "Invalid room code format");
+                return;
+            }
+
+            if (!validation.exists) {
+                setError(
+                    "Room not found. Please check the code and try again.",
+                );
+                return;
+            }
+
+            // Join room with normalized code
+            onJoinRoom(validation.normalized);
+            onClose();
+            setRoomCode("");
+            setError("");
+        } catch (err) {
+            console.error("Room validation failed:", err);
+            setError("Failed to validate room code. Please try again.");
+        } finally {
+            setIsValidating(false);
+        }
     };
 
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,10 +87,16 @@ export default function JoinRoomModal({
                         onChange={handleCodeChange}
                         placeholder="ABC-123 or ABC123"
                         maxLength={7}
-                        className="w-full px-4 py-3 text-center text-2xl font-mono font-bold tracking-wider border-2 border-retro_border rounded-lg focus:outline-none focus:border-primary"
+                        disabled={isValidating}
+                        className="w-full px-4 py-3 text-center text-2xl font-mono font-bold tracking-wider border-2 border-retro_border rounded-lg focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     {error && (
                         <p className="text-red-500 text-sm mt-2">{error}</p>
+                    )}
+                    {isValidating && (
+                        <p className="text-blue-500 text-sm mt-2 animate-pulse">
+                            Validating room...
+                        </p>
                     )}
                 </div>
 
@@ -86,12 +114,12 @@ export default function JoinRoomModal({
                         extraClass="flex-1 bg-gray-200"
                     />
                     <RetroButton
-                        text="Join Room"
+                        text={isValidating ? "Validating..." : "Join Room"}
                         icon={null}
                         onClick={handleJoinRoom}
-                        isActive={false}
+                        isActive={!isValidating}
                         msgNo={0}
-                        extraClass="flex-1 bg-primary text-white"
+                        extraClass="flex-1 bg-primary text-white disabled:opacity-50"
                     />
                 </div>
             </div>

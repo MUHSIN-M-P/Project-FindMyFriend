@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import RetroButton from "@/components/retroButton";
+import { apiPut } from "@/utils/api";
 
 type SexValue = "M" | "F" | "Other" | "Prefer not to say";
 
@@ -29,12 +30,12 @@ export default function OnboardingModal({
     const [age, setAge] = useState<string>(
         initialAge !== null && initialAge !== undefined
             ? String(initialAge)
-            : ""
+            : "",
     );
     const [sex, setSex] = useState<string>(initialSex ?? "");
     const [bio, setBio] = useState<string>(initialBio ?? "");
     const [hobbiesText, setHobbiesText] = useState<string>(
-        (initialHobbies ?? []).join(", ")
+        (initialHobbies ?? []).join(", "),
     );
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -79,32 +80,17 @@ export default function OnboardingModal({
         // Page 2: Save profile with socials
         setIsSaving(true);
         try {
-            const res = await fetch("/api/auth/profile", {
-                method: "PUT",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    age: Number(age),
-                    sex: sex as SexValue,
-                    bio,
-                    hobbies,
-                    socials,
-                }),
+            const res = await apiPut("/api/auth/profile", {
+                age: Number(age),
+                sex: sex as SexValue,
+                bio,
+                hobbies,
+                socials,
             });
 
-            if (!res.ok) {
-                const contentType = res.headers.get("content-type") || "";
-                const data = contentType.includes("application/json")
-                    ? await res.json().catch(() => null)
-                    : await res.text().catch(() => "");
-
-                const message =
-                    typeof data === "string"
-                        ? data
-                        : data?.error || data?.message;
-
+            if (res.error) {
                 setError(
-                    message || `Failed to save profile (HTTP ${res.status})`
+                    res.error || `Failed to save profile (HTTP ${res.status})`,
                 );
                 return;
             }
@@ -120,7 +106,28 @@ export default function OnboardingModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-retro_border/60 p-4">
-            <div className="w-full max-w-xl border-3 border-retro_border bg-background p-5 font-poppins text-secondary">
+            <div className="relative w-full max-w-xl border-3 border-retro_border bg-background p-5 font-poppins text-secondary">
+                {initialAge !== null && initialAge !== undefined && (
+                    <button
+                        onClick={() => onCompleted()}
+                        className="absolute right-4 top-4 p-1 hover:bg-primary/10 rounded-lg transition-colors"
+                        aria-label="Close"
+                    >
+                        <svg
+                            className="w-6 h-6 text-secondary"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
+                        </svg>
+                    </button>
+                )}
                 <div className="text-2xl font-semibold">
                     Complete your profile
                 </div>
@@ -295,8 +302,8 @@ export default function OnboardingModal({
                                         ? "Saving..."
                                         : "Next..."
                                     : page === 1
-                                    ? "Next"
-                                    : "Save & Continue"
+                                      ? "Next"
+                                      : "Save & Continue"
                             }
                             icon={null}
                             onClick={handleSubmit}

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePrivateRoom } from "@/hooks/usePrivateRoom";
-import { encryptRoomMessage, decryptRoomMessage } from "@/utils/encryption";
 import { formatRoomCode } from "@/utils/roomCode";
 import CreateRoomModal from "@/components/CreateRoomModal";
 import JoinRoomModal from "@/components/JoinRoomModal";
@@ -12,6 +11,9 @@ import ChatList from "@/components/Chat_Components/ChatList";
 import Message from "@/components/Chat_Components/Message";
 import Image from "next/image";
 import back_arrow from "../../public/icons/back_arrow.png";
+import { useOfflineMessages } from "@/hooks/useOfflineMessages";
+import { apiGet } from "@/utils/api";
+import { FiWifiOff, FiClock } from "react-icons/fi";
 
 type JoinedRoom = {
     code: string;
@@ -20,6 +22,7 @@ type JoinedRoom = {
 };
 
 export default function PrivateRoomsView() {
+    const DEBUG = process.env.NODE_ENV !== "production";
     const [joinedRooms, setJoinedRooms] = useState<JoinedRoom[]>([]);
     const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
     const [showChat, setShowChat] = useState(false);
@@ -27,18 +30,7 @@ export default function PrivateRoomsView() {
     const inputRef = useRef<HTMLInputElement>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
-    const [decryptedByRoom, setDecryptedByRoom] = useState<
-        Record<
-            string,
-            Array<{
-                id: string;
-                text: string;
-                timestamp: string;
-                isSent: boolean;
-                senderId?: number | null;
-            }>
-        >
-    >({});
+    const { isOnline, sendMessage: sendOfflineMessage } = useOfflineMessages();
 
     const [profileByUserId, setProfileByUserId] = useState<
         Record<number, { pfp: string }>
@@ -66,55 +58,6 @@ export default function PrivateRoomsView() {
         mode: activeRoom?.mode ?? "join",
     });
 
-    // Debug logging for creator status
-    useEffect(() => {
-        console.log('[PrivateRooms] isCreator:', isCreator, 'activeRoom:', activeRoomCode);
-    }, [isCreator, activeRoomCode]);
-
-    // Debug logging for user count changes
-    useEffect(() => {
-        console.log('[PrivateRooms] userCount updated:', userCount);
-    }, [userCount]);
-
-    // Decrypt messages as they arrive
-    useEffect(() => {
-        if (activeRoomCode && messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            if (lastMessage.payload?.encrypted && lastMessage.payload?.iv) {
-                decryptRoomMessage(
-                    lastMessage.payload.encrypted,
-                    lastMessage.payload.iv,
-                    activeRoomCode
-                )
-                    .then((decrypted) => {
-                        setDecryptedByRoom((prev) => {
-                            const roomMessages = prev[activeRoomCode] ?? [];
-                            const exists = roomMessages.some(
-                                (m) => m.id === lastMessage.id
-                            );
-                            if (exists) return prev;
-                            return {
-                                ...prev,
-                                [activeRoomCode]: [
-                                    ...roomMessages,
-                                    {
-                                        id: lastMessage.id,
-                                        text: decrypted,
-                                        timestamp: lastMessage.timestamp,
-                                        isSent: lastMessage.isSent,
-                                        senderId: lastMessage.senderId ?? null,
-                                    },
-                                ],
-                            };
-                        });
-                    })
-                    .catch((err) => {
-                        console.error("Decryption failed:", err);
-                    });
-            }
-        }
-    }, [activeRoomCode, messages]);
-
     // Keep "create" mode only until first successful join (then treat as join for later switching)
     useEffect(() => {
         if (!activeRoomCode) return;
@@ -124,8 +67,8 @@ export default function PrivateRoomsView() {
             prev.map((r) =>
                 r.code === activeRoomCode
                     ? { ...r, pending: false, mode: "join" }
-                    : r
-            )
+                    : r,
+            ),
         );
     }, [activeRoomCode, isJoined]);
 
@@ -135,16 +78,11 @@ export default function PrivateRoomsView() {
             alert(roomError);
             setJoinedRooms((prev) =>
                 prev.filter(
-                    (r) => !(r.code === activeRoomCode && r.pending === true)
-                )
+                    (r) => !(r.code === activeRoomCode && r.pending === true),
+                ),
             );
             setActiveRoomCode(null);
             setShowChat(false);
-            setDecryptedByRoom((prev) => {
-                const next = { ...prev };
-                delete next[activeRoomCode];
-                return next;
-            });
         }
     }, [roomError, activeRoomCode]);
 
@@ -152,15 +90,10 @@ export default function PrivateRoomsView() {
     useEffect(() => {
         if (roomEnded && activeRoomCode) {
             setJoinedRooms((prev) =>
-                prev.filter((r) => r.code !== activeRoomCode)
+                prev.filter((r) => r.code !== activeRoomCode),
             );
             setActiveRoomCode(null);
             setShowChat(false);
-            setDecryptedByRoom((prev) => {
-                const next = { ...prev };
-                delete next[activeRoomCode];
-                return next;
-            });
         }
     }, [roomEnded, activeRoomCode]);
 
@@ -178,7 +111,7 @@ export default function PrivateRoomsView() {
             return prev.map((r) =>
                 r.code === roomCode
                     ? { ...r, mode: "create", pending: true }
-                    : r
+                    : r,
             );
         });
         setActiveRoomCode(roomCode);
@@ -198,7 +131,7 @@ export default function PrivateRoomsView() {
             // If it already exists (e.g. previously created), force join flow.
             // This prevents accidentally sending create_private_room when user intended join.
             return prev.map((r) =>
-                r.code === roomCode ? { ...r, mode: "join", pending: true } : r
+                r.code === roomCode ? { ...r, mode: "join", pending: true } : r,
             );
         });
         setActiveRoomCode(roomCode);
@@ -208,15 +141,29 @@ export default function PrivateRoomsView() {
     const handleSendMessage = async () => {
         if (!inputValue.trim() || !activeRoomCode) return;
 
+        const messageText = inputValue.trim();
+        setInputValue("");
+
         try {
-            const encrypted = await encryptRoomMessage(
-                inputValue.trim(),
-                activeRoomCode
+            // Send via WebSocket for real-time delivery to room participants
+            if (connectionStatus === "connected") {
+                sendRoomMessage(messageText);
+            }
+
+            // Also queue via backend for offline recipients
+            const result = await sendOfflineMessage(
+                0, // Room messages use 0 for conversationId
+                0, // Room messages use 0 for recipientId
+                messageText,
+                true, // isRoom flag
+                activeRoomCode, // roomCode
             );
-            sendRoomMessage(encrypted);
-            setInputValue("");
+
+            if (result.status === "queued") {
+                console.log("Room message queued for later delivery");
+            }
         } catch (error) {
-            console.error("Encryption failed:", error);
+            console.error("Failed to send room message:", error);
         }
     };
 
@@ -225,15 +172,10 @@ export default function PrivateRoomsView() {
         if (confirm("Are you sure you want to leave this room?")) {
             leaveRoom();
             setJoinedRooms((prev) =>
-                prev.filter((r) => r.code !== activeRoomCode)
+                prev.filter((r) => r.code !== activeRoomCode),
             );
             setActiveRoomCode(null);
             setShowChat(false);
-            setDecryptedByRoom((prev) => {
-                const next = { ...prev };
-                delete next[activeRoomCode];
-                return next;
-            });
         }
     };
 
@@ -244,11 +186,18 @@ export default function PrivateRoomsView() {
 
     const roomContacts = useMemo(() => {
         return joinedRooms.map((r) => {
-            const lastMsg = (decryptedByRoom[r.code] ?? []).at(-1);
+            // Get last message preview from messages if this is active room
+            const roomMessages = activeRoomCode === r.code ? messages : [];
+            const lastMsg = roomMessages.at(-1);
+            const lastMsgText = lastMsg
+                ? typeof lastMsg.payload === "string"
+                    ? lastMsg.payload
+                    : lastMsg.payload?.text || "New message"
+                : null;
             const subtitle =
                 r.pending && r.code === activeRoomCode
                     ? "Connecting..."
-                    : lastMsg?.text ?? "No messages yet";
+                    : (lastMsgText ?? "No messages yet");
 
             return {
                 id: r.code,
@@ -260,20 +209,29 @@ export default function PrivateRoomsView() {
                 unread_count: 0,
                 is_online: true,
                 last_online: "",
-                number: 0,
             };
         });
-    }, [joinedRooms, decryptedByRoom, activeRoomCode]);
+    }, [joinedRooms, messages, activeRoomCode]);
 
-    const activeDecryptedMessages = useMemo(() => {
+    // Transform messages to simple format for rendering
+    const activeRoomMessages = useMemo(() => {
         if (!activeRoomCode) return [];
-        return decryptedByRoom[activeRoomCode] ?? [];
-    }, [decryptedByRoom, activeRoomCode]);
+        return messages.map((msg) => ({
+            id: msg.id,
+            text:
+                typeof msg.payload === "string"
+                    ? msg.payload
+                    : msg.payload?.text || "",
+            timestamp: msg.timestamp,
+            isSent: msg.isSent,
+            senderId: msg.senderId ?? null,
+        }));
+    }, [messages, activeRoomCode]);
 
     // Fetch profile pics for other users in the active room
     useEffect(() => {
         const missing = new Set<number>();
-        for (const m of activeDecryptedMessages) {
+        for (const m of activeRoomMessages) {
             if (m.isSent) continue;
             const senderId = m.senderId;
             if (
@@ -291,13 +249,16 @@ export default function PrivateRoomsView() {
             const entries = Array.from(missing);
             for (const senderId of entries) {
                 try {
-                    const res = await fetch(`/api/chat/profile/${senderId}`);
-                    if (!res.ok) {
-                        console.warn(`Failed to fetch profile for user ${senderId}`);
+                    const res = await apiGet(`/api/chat/profile/${senderId}`);
+                    if (res.error) {
+                        console.warn(
+                            `Failed to fetch profile for user ${senderId}`,
+                        );
                         continue;
                     }
-                    const data = await res.json();
-                    console.log(`[Profile Fetch] User ${senderId}:`, data);
+                    const data = res.data;
+                    if (DEBUG)
+                        console.log(`[Profile Fetch] User ${senderId}:`, data);
                     const pfp = data?.profile_pic || "/avatars/male_avatar.png";
                     if (!cancelled) {
                         setProfileByUserId((prev) => ({
@@ -306,7 +267,10 @@ export default function PrivateRoomsView() {
                         }));
                     }
                 } catch (err) {
-                    console.error(`Error fetching profile for user ${senderId}:`, err);
+                    console.error(
+                        `Error fetching profile for user ${senderId}:`,
+                        err,
+                    );
                 }
             }
         })();
@@ -314,7 +278,7 @@ export default function PrivateRoomsView() {
         return () => {
             cancelled = true;
         };
-    }, [activeDecryptedMessages, profileByUserId]);
+    }, [activeRoomMessages, profileByUserId, DEBUG]);
 
     return (
         <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins">
@@ -368,7 +332,7 @@ export default function PrivateRoomsView() {
                                     {userCount} user{userCount !== 1 ? "s" : ""}{" "}
                                     {ttlStarted && expiresIn != null
                                         ? `• ${Math.floor(
-                                              expiresIn / 60
+                                              expiresIn / 60,
                                           )}min left`
                                         : "• Waiting for 2nd user"}
                                 </p>
@@ -378,6 +342,14 @@ export default function PrivateRoomsView() {
                                 </p>
                             )}
                         </div>
+
+                        {/* Offline/Pending Indicator for Rooms */}
+                        {activeRoomCode && !isOnline && (
+                            <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-retro_orange/20 text-secondary text-sm">
+                                <FiWifiOff className="w-4 h-4" />
+                                <span>Offline</span>
+                            </div>
+                        )}
                     </div>
 
                     {activeRoomCode ? (
@@ -415,12 +387,12 @@ export default function PrivateRoomsView() {
                             <div className="text-center py-4 opacity-70">
                                 Connecting to room...
                             </div>
-                        ) : activeDecryptedMessages.length === 0 ? (
+                        ) : activeRoomMessages.length === 0 ? (
                             <div className="text-center py-4 opacity-70">
                                 No messages yet. Start the conversation!
                             </div>
                         ) : (
-                            activeDecryptedMessages.map((m, index) => (
+                            activeRoomMessages.map((m, index) => (
                                 <Message
                                     key={`pm-${m.id}-${index}`}
                                     message={{

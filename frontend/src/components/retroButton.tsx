@@ -1,3 +1,5 @@
+import React from "react";
+
 const RetroButton = ({
     text,
     icon,
@@ -7,7 +9,7 @@ const RetroButton = ({
     extraClass,
 }: {
     text: string;
-    icon: string | null;
+    icon: string | React.ReactNode | null;
     onClick: () => void | Promise<void>;
     isActive: boolean;
     msgNo: number;
@@ -22,13 +24,18 @@ const RetroButton = ({
                     : "bg-background text-secondary"
             } ${extraClass}`}
         >
-            {icon && (
-                <img
-                    src={icon}
-                    alt={text + "_icon"}
-                    className="object-contain h-full"
-                />
-            )}
+            {icon &&
+                (typeof icon === "string" ? (
+                    <img
+                        src={icon}
+                        alt={text + "_icon"}
+                        className="object-contain h-full"
+                    />
+                ) : (
+                    <span className="flex items-center justify-center">
+                        {icon}
+                    </span>
+                ))}
             {text}
             <div
                 className={`${

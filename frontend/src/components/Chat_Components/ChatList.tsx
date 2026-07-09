@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import Contact from "@/components/Chat_Components/Contact";
 import RetroButton from "@/components/retroButton";
 
@@ -14,7 +14,6 @@ interface ContactType {
     unread_count: number;
     is_online: boolean;
     last_online: string;
-    number: number;
 }
 
 interface ContactsListProps {
@@ -43,20 +42,15 @@ export default function ContactsList({
     emptyText,
 }: ContactsListProps) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [filteredContacts, setFilteredContacts] =
-        useState<ContactType[]>(contacts);
 
-    useEffect(() => {
-        if (!searchQuery.trim()) {
-            setFilteredContacts(contacts);
-            return;
-        }
+    const filteredContacts = useMemo(() => {
+        const trimmed = searchQuery.trim();
+        if (!trimmed) return contacts;
 
-        const query = searchQuery.toLowerCase();
-        const filtered = contacts.filter((contact) =>
-            contact.name.toLowerCase().includes(query)
+        const query = trimmed.toLowerCase();
+        return contacts.filter((contact) =>
+            contact.name.toLowerCase().includes(query),
         );
-        setFilteredContacts(filtered);
     }, [searchQuery, contacts]);
 
     return (
@@ -68,15 +62,15 @@ export default function ContactsList({
                             connectionStatus === "authenticated"
                                 ? "bg-green-500"
                                 : connectionStatus === "connected"
-                                ? "bg-yellow-500"
-                                : "bg-red-500"
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
                         }`}
                     ></span>
                     {connectionStatus === "authenticated"
                         ? "Connected"
                         : connectionStatus === "connected"
-                        ? "Connecting..."
-                        : "Offline"}
+                          ? "Connecting..."
+                          : "Offline"}
                 </div>
 
                 {error && (

@@ -13,6 +13,7 @@ export function usePrivateRoom(
     roomId: string | null,
     options?: { mode?: "create" | "join" }
 ) {
+    const DEBUG = process.env.NODE_ENV !== "production";
     const [messages, setMessages] = useState<RoomMessage[]>([]);
     const [userCount, setUserCount] = useState(0);
     const [ttlStarted, setTtlStarted] = useState(false);
@@ -26,7 +27,7 @@ export function usePrivateRoom(
 
     const handleRoomEvents = useCallback(
         (event: any) => {
-            console.log("Room event received:", event);
+            if (DEBUG) console.log("Room event received:", event);
 
             // Ignore events for other rooms; this hook is for a single active room
             if (roomId && event?.room_id && event.room_id !== roomId) {
@@ -46,7 +47,7 @@ export function usePrivateRoom(
                     break;
 
                 case "joined_room":
-                    console.log("[usePrivateRoom] joined_room event:", event);
+                    if (DEBUG) console.log("[usePrivateRoom] joined_room event:", event);
                     setIsJoined(true);
                     setUserCount(event.user_count);
                     setTtlStarted(event.ttl_started);
@@ -54,10 +55,7 @@ export function usePrivateRoom(
                     setRoomEnded(false);
                     setRoomError(null);
                     setIsCreator(Boolean(event.is_creator));
-                    console.log(
-                        "[usePrivateRoom] Set isCreator to:",
-                        Boolean(event.is_creator)
-                    );
+                    if (DEBUG) console.log("[usePrivateRoom] Set isCreator to:", Boolean(event.is_creator));
                     break;
 
                 case "user_joined_room":
@@ -71,10 +69,7 @@ export function usePrivateRoom(
                     break;
 
                 case "user_left_room":
-                    console.log(
-                        "[usePrivateRoom] user_left_room event:",
-                        event
-                    );
+                    if (DEBUG) console.log("[usePrivateRoom] user_left_room event:", event);
                     setUserCount(event.user_count);
                     if (typeof event.ttl_started === "boolean") {
                         setTtlStarted(event.ttl_started);
@@ -126,7 +121,7 @@ export function usePrivateRoom(
                     break;
             }
         },
-        [roomId]
+        [roomId, DEBUG]
     );
 
     const { sendRawMessage, isAuthenticated, userId, connectionStatus } =
@@ -156,13 +151,13 @@ export function usePrivateRoom(
             return;
         }
 
-        console.log("Joining room:", roomId);
+        if (DEBUG) console.log("Joining room:", roomId);
         setRoomError(null);
         sendRawMessage({
             type: "join_private_room",
             room_id: roomId,
         });
-    }, [roomId, isAuthenticated, sendRawMessage]);
+    }, [roomId, isAuthenticated, sendRawMessage, DEBUG]);
 
     const sendRoomMessage = useCallback(
         (payload: any) => {
@@ -171,7 +166,7 @@ export function usePrivateRoom(
                 return;
             }
 
-            console.log("Sending room message:", payload);
+            if (DEBUG) console.log("Sending room message:", payload);
 
             // Add to local messages immediately (optimistic update)
             setMessages((prev) => [
@@ -192,7 +187,7 @@ export function usePrivateRoom(
                 payload: payload,
             });
         },
-        [isJoined, roomId, sendRawMessage, userId]
+        [isJoined, roomId, sendRawMessage, userId, DEBUG]
     );
 
     const endRoom = useCallback(() => {
@@ -201,12 +196,12 @@ export function usePrivateRoom(
             return;
         }
 
-        console.log("Ending room:", roomId);
+        if (DEBUG) console.log("Ending room:", roomId);
         sendRawMessage({
             type: "end_room",
             room_id: roomId,
         });
-    }, [roomId, sendRawMessage]);
+    }, [roomId, sendRawMessage, DEBUG]);
 
     const leaveRoom = useCallback(
         (roomIdOverride?: string) => {

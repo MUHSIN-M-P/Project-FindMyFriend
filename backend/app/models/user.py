@@ -17,6 +17,7 @@ class User(UserMixin, db.Model):
     profile_pic: Mapped[str] = mapped_column(Text, nullable=True, default="/avatars/male_avatar.png")
     hobbies: Mapped[str] = mapped_column(Text, nullable=True)  # JSON string of hobbies
     bio: Mapped[str] = mapped_column(Text, nullable=True)
+    quiz_answers: Mapped[str] = mapped_column(Text, nullable=True)  # JSON string mapping question_id -> answer value
     
     def get_id(self):
         return str(self.id)
@@ -31,11 +32,12 @@ class User(UserMixin, db.Model):
             "profile_pic":  self.profile_pic or "/avatars/male_avatar.png",
             "bio": self.bio,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "hobbies": self.hobbies.split(",") if self.hobbies else []
+            "hobbies": self.hobbies.split(",") if self.hobbies else [],
         }
         
         if include_private:
             user_data["email"] = self.email
             user_data["last_seen"] = self.last_seen.isoformat() if self.last_seen else None
+            user_data["quiz_answers"] = self.quiz_answers
             
         return user_data

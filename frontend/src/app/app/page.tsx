@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, startTransition } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import NavbarWrapper from "@/components/NavBarWrapper";
 import BottomBar from "@/components/bottomBar";
 import OnboardingModal from "@/components/OnboardingModal";
@@ -70,19 +72,41 @@ type View =
 
 export default function AppPage() {
     const { user, isLoading, refreshUser } = useAuth();
+    const router = useRouter();
     const [currentView, setCurrentView] = useState<View>("find");
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
+    // Keep the WebSocket warm in the background so view switches don't hitch.
+    const { connect: connectWebSocket } = useWebSocket({ autoConnect: false });
+
+    const handleViewChange = (view: View) => {
+        startTransition(() => {
+            setCurrentView(view);
+        });
+    };
 
     // Prefetch adjacent views in background
     useEffect(() => {
         if (currentView === "find") {
             // Preload chat view when on find page
             import("@/views/ChatView");
+
+            // Also warm up the websocket connection off the critical path
+            const timeout = window.setTimeout(() => {
+                void connectWebSocket();
+            }, 200);
+            return () => window.clearTimeout(timeout);
         } else if (currentView === "chat") {
             // Preload profile when in chat
             import("@/views/ProfileView");
         }
-    }, [currentView]);
+    }, [currentView, connectWebSocket]);
+
+    useEffect(() => {
+        if (!isLoading && !user) {
+            router.replace("/");
+        }
+    }, [isLoading, user, router]);
 
     if (isLoading) {
         return (
@@ -92,10 +116,7 @@ export default function AppPage() {
         );
     }
 
-    if (!user) {
-        window.location.href = "/";
-        return null;
-    }
+    if (!user) return null;
 
     const needsOnboarding =
         user.age === null ||
@@ -145,7 +166,7 @@ export default function AppPage() {
         <div className="flex flex-col min-h-screen bg-background w-full">
             <NavbarWrapper
                 currentView={currentView}
-                onViewChange={setCurrentView}
+                onViewChange={handleViewChange}
             />
             <main className="flex-grow pb-20 md:pb-0 flex justify-center">
                 <Suspense fallback={<div>Loading...</div>}>

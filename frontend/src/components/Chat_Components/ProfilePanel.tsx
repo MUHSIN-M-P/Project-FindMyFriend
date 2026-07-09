@@ -56,7 +56,7 @@ export default function ProfilePanel({
                         />
                     )}
                     <div className="flex flex-col gap-2">
-                        <p className="text-xl">{`${name} | ${age}${sex}`}</p>
+                        <p className="text-xl">{`${name} | ${age} ${sex === "M" ? "👦🏻" : sex === "F" ? "👧🏻" : sex}`}</p>
                         <RetroButton
                             text={`score: ${score}fp`}
                             icon={null}
@@ -140,7 +140,7 @@ export default function ProfilePanel({
                         />
                     )}
                     <div className="flex flex-col gap-2">
-                        <p className="text-xl">{`${name} | ${age}${sex}`}</p>
+                        <p className="text-xl">{`${name} | ${age} ${sex === "M" ? "👦🏻" : sex === "F" ? "👧🏻" : sex}`}</p>
                         <RetroButton
                             text={`score: ${score}fp`}
                             icon={null}

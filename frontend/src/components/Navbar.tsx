@@ -1,5 +1,8 @@
 "use client";
+import { useCallback, useEffect, useRef, useState } from "react";
 import RetroButton from "./retroButton";
+import { FiSettings } from "react-icons/fi";
+import { apiGet } from "@/utils/api";
 
 type View =
     | "find"
@@ -20,9 +23,47 @@ const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
         { name: "Profile", view: "profile" as View },
         { name: "Private Rooms", view: "privateRooms" as View },
     ];
-    const res = { data: { msgNo: 5, notifNo: 1 } }; // await axios.get("___")
-    const msgNo = res.data.msgNo;
-    const notifNo = res.data.notifNo;
+    const [msgNo, setMsgNo] = useState<number>(0);
+    const [notifNo] = useState<number>(0);
+    const lastFetchRef = useRef<number>(0);
+
+    const refreshUnreadCount = useCallback(
+        async (opts?: { force?: boolean }) => {
+            const force = Boolean(opts?.force);
+            const now = Date.now();
+            // Avoid re-fetching too aggressively on rapid view changes.
+            if (!force && now - lastFetchRef.current < 3000) return;
+            lastFetchRef.current = now;
+
+            const res = await apiGet<{ count: number }>(
+                "/api/chat/unread-count",
+            );
+            if (res.error) return;
+            setMsgNo(Number(res.data?.count || 0));
+        },
+        [],
+    );
+
+    useEffect(() => {
+        void refreshUnreadCount();
+    }, [currentView, refreshUnreadCount]);
+
+    useEffect(() => {
+        const onFocus = () => {
+            void refreshUnreadCount({ force: true });
+        };
+        window.addEventListener("focus", onFocus);
+        return () => window.removeEventListener("focus", onFocus);
+    }, [refreshUnreadCount]);
+
+    useEffect(() => {
+        const onUnreadChanged = () => {
+            void refreshUnreadCount({ force: true });
+        };
+        window.addEventListener("chat:unread-changed", onUnreadChanged);
+        return () =>
+            window.removeEventListener("chat:unread-changed", onUnreadChanged);
+    }, [refreshUnreadCount]);
 
     // Determine title based on current path
     const getNavTitle = () => {
@@ -145,12 +186,7 @@ const Navbar = ({ currentView, onViewChange }: NavbarProps) => {
                                 currentView === "profile" ? "" : "hidden"
                             }`}
                         >
-                            <img
-                                src="/icons/settings.svg"
-                                alt="settings"
-                                className="object-contain h-8"
-                                width={30}
-                            />
+                            <FiSettings className="h-8 w-8 text-secondary" />
                         </button>
                     </div>
                 </div>

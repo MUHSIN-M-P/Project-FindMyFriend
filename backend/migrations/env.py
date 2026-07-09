@@ -18,6 +18,8 @@ if config.config_file_name is not None:
 # --- Custom: Load DB URL from env and import models ---
 import os
 import sys
+# Signal to the Flask app package that we're running migrations.
+os.environ["ALEMBIC_RUNNING"] = "1"
 # Add the parent directory to the path so we can import from app
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
@@ -26,7 +28,7 @@ load_dotenv()
 # Import the app and models
 from app.models import db
 from app.models.user import User
-from app.models.converstaions import Conversations
+from app.models.conversations import Conversations
 from app.models.messages import Messages
 from app.models.message_status import MessageStatus
 

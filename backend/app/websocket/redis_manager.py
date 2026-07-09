@@ -11,6 +11,11 @@ class RedisConnectionManager:
     def __init__(self):
         self.redis_client = None
         self.connect()
+
+    @property
+    def redis(self):
+        """Backward-compatible alias for the underlying Redis client."""
+        return self.redis_client
     
     def connect(self):
         try:
@@ -19,8 +24,10 @@ class RedisConnectionManager:
                 self.redis_client = redis.from_url(
                     redis_url,
                     decode_responses=True,
-                    socket_connect_timeout=5,
-                    socket_timeout=5
+                    socket_connect_timeout=10,
+                    socket_timeout=30,
+                    retry_on_timeout=True,
+                    health_check_interval=30,
                 )
                 self.redis_client.ping()
                 print(" Connected to Redis")

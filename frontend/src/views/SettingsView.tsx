@@ -5,8 +5,9 @@ import RetroButton from "@/components/retroButton";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
+import { apiDelete } from "@/utils/api";
 
-export default function SettingsView() {
+export default function SettingsView({ onClose }: { onClose?: () => void }) {
     const currentPath = usePathname();
     const { logout } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -16,22 +17,16 @@ export default function SettingsView() {
         if (isDeleting) return;
 
         const ok = window.confirm(
-            "Delete your account permanently? This cannot be undone."
+            "Delete your account permanently? This cannot be undone.",
         );
         if (!ok) return;
 
         setIsDeleting(true);
         try {
-            const backendUrl =
-                process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-            const res = await fetch(`${backendUrl}/api/auth/delete`, {
-                method: "DELETE",
-                credentials: "include",
-            });
+            const res = await apiDelete("/api/auth/delete");
 
-            if (!res.ok) {
-                const data = await res.json().catch(() => null);
-                alert(data?.error || "Failed to delete account");
+            if (res.error) {
+                alert(res.error || "Failed to delete account");
                 return;
             }
 
@@ -49,6 +44,27 @@ export default function SettingsView() {
 
     return (
         <div className="relative flex flex-col px-5 items-center w-full border-3 border-l-0 max-lg:border-b-0! max-lg:border-r-0! border-retro_border font-poppins">
+            {onClose && (
+                <button
+                    onClick={onClose}
+                    className="absolute left-4 top-4 lg:top-8 p-2 hover:bg-primary/10 rounded-lg transition-colors"
+                    aria-label="Go back"
+                >
+                    <svg
+                        className="w-6 h-6 text-secondary"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15 19l-7-7 7-7"
+                        />
+                    </svg>
+                </button>
+            )}
             <div className="flex justify-center items-center title w-full text-4xl max-lg:text-2xl font-medium text-secondary lg:py-8 py-4">
                 Settings
             </div>

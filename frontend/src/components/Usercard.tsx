@@ -60,7 +60,12 @@ const Usercard = ({ user, onUserClick }: props) => {
                     href={`/profile/${user.id}`}
                     className="intro_title font-semibold text-[22px]"
                 >
-                    {user.name} | {user.age} {user.gender}
+                    {user.name} | {user.age}{" "}
+                    {user.gender === "M"
+                        ? "👦🏻"
+                        : user.gender === "F"
+                          ? "👧🏻"
+                          : user.gender}
                 </Link>
                 <div className="Hobbies flex gap-2 lg:gap-3 text-secondary flex-wrap">
                     {user.hobbies.map((hobby, index) => (

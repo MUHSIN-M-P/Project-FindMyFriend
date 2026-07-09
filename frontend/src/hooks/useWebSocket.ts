@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
 interface Message {
     id: string;
@@ -36,56 +36,97 @@ interface UseWebSocketProps {
     onNewMessage?: (message: Message) => void;
     onContactUpdate?: (contact: Contact) => void;
     onRoomEvent?: (event: RoomEvent) => void;
+    autoConnect?: boolean;
+    disconnectOnUnmount?: boolean;
 }
 
-export function useWebSocket({
-    onNewMessage,
-    onContactUpdate,
-    onRoomEvent,
-}: UseWebSocketProps) {
-    const wsRef = useRef<WebSocket | null>(null);
-    const onNewMessageRef = useRef<
-        UseWebSocketProps["onNewMessage"] | undefined
-    >(undefined);
-    const onContactUpdateRef = useRef<
-        UseWebSocketProps["onContactUpdate"] | undefined
-    >(undefined);
-    const onRoomEventRef = useRef<UseWebSocketProps["onRoomEvent"] | undefined>(
-        undefined
-    );
-    const connectInFlightRef = useRef(false);
-    const reconnectTimerRef = useRef<number | null>(null);
-    const retryCountRef = useRef(0);
-    const [isConnected, setIsConnected] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [userId, setUserId] = useState<number | null>(null);
-    const [connectionStatus, setConnectionStatus] = useState<
-        "connecting" | "connected" | "authenticated" | "disconnected"
-    >("disconnected");
-    const [retryCount, setRetryCount] = useState(0);
-    const maxRetries = 3;
+type ConnectionStatus =
+    | "connecting"
+    | "connected"
+    | "authenticated"
+    | "disconnected";
 
-    useEffect(() => {
-        onNewMessageRef.current = onNewMessage;
-        onContactUpdateRef.current = onContactUpdate;
-        onRoomEventRef.current = onRoomEvent;
-    }, [onNewMessage, onContactUpdate, onRoomEvent]);
+type Snapshot = {
+    isConnected: boolean;
+    isAuthenticated: boolean;
+    userId: number | null;
+    connectionStatus: ConnectionStatus;
+    retryCount: number;
+};
 
-    const connect = useCallback(async () => {
+type WebSocketHandlers = {
+    onNewMessage?: (message: Message) => void;
+    onContactUpdate?: (contact: Contact) => void;
+    onRoomEvent?: (event: RoomEvent) => void;
+};
+
+const DEBUG = process.env.NODE_ENV !== "production";
+
+const defaultSnapshot: Snapshot = {
+    isConnected: false,
+    isAuthenticated: false,
+    userId: null,
+    connectionStatus: "disconnected",
+    retryCount: 0,
+};
+
+class SharedWebSocketManager {
+    private ws: WebSocket | null = null;
+    private connectInFlight = false;
+    private reconnectTimer: number | null = null;
+    private retryCount = 0;
+    private maxRetries = 3;
+
+    private snapshot: Snapshot = { ...defaultSnapshot };
+    private subscribers = new Set<(s: Snapshot) => void>();
+    private handlers = new Set<WebSocketHandlers>();
+
+    private setSnapshot(patch: Partial<Snapshot>) {
+        this.snapshot = { ...this.snapshot, ...patch };
+        for (const sub of this.subscribers) sub(this.snapshot);
+    }
+
+    getSnapshot(): Snapshot {
+        return this.snapshot;
+    }
+
+    subscribe(fn: (s: Snapshot) => void) {
+        this.subscribers.add(fn);
+        fn(this.snapshot);
+        return () => {
+            this.subscribers.delete(fn);
+        };
+    }
+
+    addHandlers(h: WebSocketHandlers) {
+        this.handlers.add(h);
+        return () => {
+            this.handlers.delete(h);
+        };
+    }
+
+    private clearReconnectTimer() {
+        if (this.reconnectTimer != null) {
+            window.clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+    }
+
+    async connect() {
+        if (this.connectInFlight) return;
+
+        if (
+            this.ws &&
+            (this.ws.readyState === WebSocket.OPEN ||
+                this.ws.readyState === WebSocket.CONNECTING)
+        ) {
+            return;
+        }
+
+        this.connectInFlight = true;
+        this.setSnapshot({ connectionStatus: "connecting" });
+
         try {
-            if (connectInFlightRef.current) return;
-            if (
-                wsRef.current &&
-                (wsRef.current.readyState === WebSocket.OPEN ||
-                    wsRef.current.readyState === WebSocket.CONNECTING)
-            ) {
-                return;
-            }
-
-            connectInFlightRef.current = true;
-
-            setConnectionStatus("connecting");
-
             // Get WebSocket token from backend using HttpOnly cookie
             const tokenResponse = await fetch("/api/auth/websocket-token", {
                 method: "POST",
@@ -103,20 +144,16 @@ export function useWebSocket({
                 "ws://localhost:8765";
 
             const ws = new WebSocket(wsUrl);
-            wsRef.current = ws;
+            this.ws = ws;
 
             ws.onopen = () => {
-                setIsConnected(true);
-                setConnectionStatus("connected");
-                console.log("Connected to WebSocket");
+                this.setSnapshot({ isConnected: true, connectionStatus: "connected" });
 
-                // Cancel any scheduled reconnect attempts
-                if (reconnectTimerRef.current != null) {
-                    window.clearTimeout(reconnectTimerRef.current);
-                    reconnectTimerRef.current = null;
-                }
-                retryCountRef.current = 0;
-                setRetryCount(0);
+                if (DEBUG) console.log("Connected to WebSocket");
+
+                this.clearReconnectTimer();
+                this.retryCount = 0;
+                this.setSnapshot({ retryCount: 0 });
 
                 // Send authentication with WebSocket token
                 ws.send(
@@ -130,42 +167,44 @@ export function useWebSocket({
             ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    console.log("WebSocket message received:", data);
+                    if (DEBUG) console.log("WebSocket message received:", data);
 
                     switch (data.type) {
                         case "authenticated":
-                            setIsAuthenticated(true);
-                            setUserId(data.user_id);
-                            setConnectionStatus("authenticated");
-                            console.log("Authenticated as user:", data.user_id);
+                            this.setSnapshot({
+                                isAuthenticated: true,
+                                userId: data.user_id,
+                                connectionStatus: "authenticated",
+                            });
+                            if (DEBUG)
+                                console.log("Authenticated as user:", data.user_id);
                             break;
 
                         case "new_message":
-                            if (onNewMessageRef.current && data.data) {
+                            if (data.data) {
                                 const message: Message = {
                                     id: data.data.id.toString(),
                                     type: "received",
                                     msg: data.data.content,
                                     pfp: data.data.pfp,
                                     timestamp: data.data.created_at,
-                                    message_type:
-                                        data.data.message_type || "text",
+                                    message_type: data.data.message_type || "text",
                                     sender_id: data.data.sender_id,
                                 };
-                                onNewMessageRef.current(message);
+                                for (const h of this.handlers) {
+                                    h.onNewMessage?.(message);
+                                }
                             }
                             break;
 
                         case "message_status_update":
-                            console.log("Message status update:", data);
-                            break;
-
                         case "typing_indicator":
-                            console.log("Typing indicator:", data);
+                            // no-op for now
                             break;
 
                         case "error":
-                            console.error("WebSocket error:", data.message);
+                            if (DEBUG)
+                                console.error("WebSocket error:", data.message);
                             break;
 
                         // Private room events
@@ -178,25 +217,26 @@ export function useWebSocket({
                         case "room_message":
                         case "room_expired":
                         case "room_ended":
-                            if (onRoomEventRef.current) {
-                                onRoomEventRef.current(data as RoomEvent);
+                            for (const h of this.handlers) {
+                                h.onRoomEvent?.(data as RoomEvent);
                             }
                             break;
 
                         default:
-                            console.log("Unknown message type:", data.type);
+                            if (DEBUG) console.log("Unknown message type:", data.type);
                     }
                 } catch (error) {
-                    console.error("Error parsing WebSocket message:", error);
+                    if (DEBUG)
+                        console.error("Error parsing WebSocket message:", error);
                 }
             };
 
             ws.onerror = (error) => {
-                console.error("WebSocket error:", error);
-                setConnectionStatus("disconnected");
+                if (DEBUG) console.error("WebSocket error:", error);
+                this.setSnapshot({ connectionStatus: "disconnected" });
 
                 // Avoid multiple concurrent reconnect timers
-                if (reconnectTimerRef.current != null) return;
+                if (this.reconnectTimer != null) return;
 
                 // Force close so we don't keep a broken socket around
                 try {
@@ -205,149 +245,186 @@ export function useWebSocket({
                     // ignore
                 }
 
-                const currentRetry = retryCountRef.current;
-                if (currentRetry >= maxRetries) return;
+                if (this.retryCount >= this.maxRetries) return;
+                this.retryCount += 1;
+                this.setSnapshot({ retryCount: this.retryCount });
 
-                const nextRetry = currentRetry + 1;
-                retryCountRef.current = nextRetry;
-                setRetryCount(nextRetry);
-
-                reconnectTimerRef.current = window.setTimeout(() => {
-                    reconnectTimerRef.current = null;
-                    console.log(
-                        `Retrying connection (${nextRetry}/${maxRetries})...`
-                    );
-                    connect();
+                const nextRetry = this.retryCount;
+                this.reconnectTimer = window.setTimeout(() => {
+                    this.reconnectTimer = null;
+                    if (DEBUG)
+                        console.log(
+                            `Retrying connection (${nextRetry}/${this.maxRetries})...`
+                        );
+                    void this.connect();
                 }, 2000 * nextRetry);
             };
 
             ws.onclose = () => {
-                setIsConnected(false);
-                setIsAuthenticated(false);
-                setUserId(null);
-                setConnectionStatus("disconnected");
-                console.log("Disconnected from WebSocket");
+                this.setSnapshot({
+                    isConnected: false,
+                    isAuthenticated: false,
+                    userId: null,
+                    connectionStatus: "disconnected",
+                });
+                if (DEBUG) console.log("Disconnected from WebSocket");
 
                 // Clear ref so a new connection can be created
-                if (wsRef.current === ws) {
-                    wsRef.current = null;
+                if (this.ws === ws) {
+                    this.ws = null;
                 }
 
-                // Reset retry count on clean disconnect
-                retryCountRef.current = 0;
-                setRetryCount(0);
+                this.retryCount = 0;
+                this.setSnapshot({ retryCount: 0 });
             };
         } catch (error) {
-            console.error("Failed to connect to WebSocket:", error);
-            setConnectionStatus("disconnected");
+            if (DEBUG) console.error("Failed to connect to WebSocket:", error);
+            this.setSnapshot({ connectionStatus: "disconnected" });
         } finally {
-            connectInFlightRef.current = false;
+            this.connectInFlight = false;
         }
+    }
+
+    disconnect() {
+        this.clearReconnectTimer();
+        if (this.ws) {
+            try {
+                this.ws.close();
+            } catch {
+                // ignore
+            }
+            this.ws = null;
+        }
+        this.retryCount = 0;
+        this.setSnapshot({ ...defaultSnapshot });
+    }
+
+    sendRawMessage(message: Record<string, any>) {
+        if (!this.ws || !this.snapshot.isAuthenticated) {
+            if (DEBUG) console.warn("WebSocket not connected or not authenticated");
+            return;
+        }
+        this.ws.send(JSON.stringify(message));
+        if (DEBUG) console.log("Sent raw message:", message);
+    }
+
+    sendMessage(recipientId: number, content: string, messageType: string = "text") {
+        this.sendRawMessage({
+            type: "send_message",
+            recipient_id: recipientId,
+            content,
+            message_type: messageType,
+        });
+    }
+
+    markMessageDelivered(messageId: number) {
+        this.sendRawMessage({ type: "mark_delivered", message_id: messageId });
+    }
+
+    markMessageRead(messageId: number) {
+        this.sendRawMessage({ type: "mark_read", message_id: messageId });
+    }
+
+    sendTypingIndicator(recipientId: number, isTyping: boolean) {
+        this.sendRawMessage({
+            type: "typing",
+            recipient_id: recipientId,
+            is_typing: isTyping,
+        });
+    }
+}
+
+const manager = new SharedWebSocketManager();
+
+export function useWebSocket({
+    onNewMessage,
+    onContactUpdate,
+    onRoomEvent,
+    autoConnect = true,
+    disconnectOnUnmount = false,
+}: UseWebSocketProps) {
+    const onNewMessageRef = useRef<UseWebSocketProps["onNewMessage"]>();
+    const onContactUpdateRef = useRef<UseWebSocketProps["onContactUpdate"]>();
+    const onRoomEventRef = useRef<UseWebSocketProps["onRoomEvent"]>();
+
+    const [snapshot, setSnapshot] = useState<Snapshot>(() => manager.getSnapshot());
+
+    useEffect(() => {
+        onNewMessageRef.current = onNewMessage;
+        onContactUpdateRef.current = onContactUpdate;
+        onRoomEventRef.current = onRoomEvent;
+    }, [onNewMessage, onContactUpdate, onRoomEvent]);
+
+    const onNewMessageWrapper = useCallback((m: Message) => {
+        onNewMessageRef.current?.(m);
+    }, []);
+    const onContactUpdateWrapper = useCallback((c: Contact) => {
+        onContactUpdateRef.current?.(c);
+    }, []);
+    const onRoomEventWrapper = useCallback((e: RoomEvent) => {
+        onRoomEventRef.current?.(e);
     }, []);
 
-    const disconnect = useCallback(() => {
-        if (reconnectTimerRef.current != null) {
-            window.clearTimeout(reconnectTimerRef.current);
-            reconnectTimerRef.current = null;
-        }
-        if (wsRef.current) {
-            wsRef.current.close();
-            wsRef.current = null;
-        }
-    }, []);
-
-    const sendMessage = useCallback(
-        (
-            recipientId: number,
-            content: string,
-            messageType: string = "text"
-        ) => {
-            if (wsRef.current && isAuthenticated) {
-                const message = {
-                    type: "send_message",
-                    recipient_id: recipientId,
-                    content: content,
-                    message_type: messageType,
-                };
-
-                wsRef.current.send(JSON.stringify(message));
-                console.log("Sent message:", message);
-            } else {
-                console.warn("WebSocket not connected or not authenticated");
-            }
-        },
-        [isAuthenticated]
-    );
-
-    const markMessageDelivered = useCallback(
-        (messageId: number) => {
-            if (wsRef.current && isAuthenticated) {
-                wsRef.current.send(
-                    JSON.stringify({
-                        type: "mark_delivered",
-                        message_id: messageId,
-                    })
-                );
-            }
-        },
-        [isAuthenticated]
-    );
-
-    const markMessageRead = useCallback(
-        (messageId: number) => {
-            if (wsRef.current && isAuthenticated) {
-                wsRef.current.send(
-                    JSON.stringify({
-                        type: "mark_read",
-                        message_id: messageId,
-                    })
-                );
-            }
-        },
-        [isAuthenticated]
-    );
-
-    const sendTypingIndicator = useCallback(
-        (recipientId: number, isTyping: boolean) => {
-            if (wsRef.current && isAuthenticated) {
-                wsRef.current.send(
-                    JSON.stringify({
-                        type: "typing",
-                        recipient_id: recipientId,
-                        is_typing: isTyping,
-                    })
-                );
-            }
-        },
-        [isAuthenticated]
-    );
-
-    const sendRawMessage = useCallback(
-        (message: Record<string, any>) => {
-            if (wsRef.current && isAuthenticated) {
-                wsRef.current.send(JSON.stringify(message));
-                console.log("Sent raw message:", message);
-            } else {
-                console.warn("WebSocket not connected or not authenticated");
-            }
-        },
-        [isAuthenticated]
+    const handlersObj = useMemo<WebSocketHandlers>(
+        () => ({
+            onNewMessage: onNewMessageWrapper,
+            onContactUpdate: onContactUpdateWrapper,
+            onRoomEvent: onRoomEventWrapper,
+        }),
+        [onNewMessageWrapper, onContactUpdateWrapper, onRoomEventWrapper]
     );
 
     useEffect(() => {
-        // Auto-connect when component mounts
-        connect();
+        const unsub = manager.subscribe(setSnapshot);
+        const removeHandlers = manager.addHandlers(handlersObj);
+
+        if (autoConnect) {
+            void manager.connect();
+        }
 
         return () => {
-            disconnect();
+            removeHandlers();
+            unsub();
+            if (disconnectOnUnmount) {
+                manager.disconnect();
+            }
         };
-    }, [connect, disconnect]);
+    }, [autoConnect, disconnectOnUnmount, handlersObj]);
+
+    const connect = useCallback(() => manager.connect(), []);
+    const disconnect = useCallback(() => manager.disconnect(), []);
+
+    const sendMessage = useCallback(
+        (recipientId: number, content: string, messageType: string = "text") => {
+            manager.sendMessage(recipientId, content, messageType);
+        },
+        []
+    );
+
+    const markMessageDelivered = useCallback((messageId: number) => {
+        manager.markMessageDelivered(messageId);
+    }, []);
+
+    const markMessageRead = useCallback((messageId: number) => {
+        manager.markMessageRead(messageId);
+    }, []);
+
+    const sendTypingIndicator = useCallback(
+        (recipientId: number, isTyping: boolean) => {
+            manager.sendTypingIndicator(recipientId, isTyping);
+        },
+        []
+    );
+
+    const sendRawMessage = useCallback((message: Record<string, any>) => {
+        manager.sendRawMessage(message);
+    }, []);
 
     return {
-        isConnected,
-        isAuthenticated,
-        userId,
-        connectionStatus,
+        isConnected: snapshot.isConnected,
+        isAuthenticated: snapshot.isAuthenticated,
+        userId: snapshot.userId,
+        connectionStatus: snapshot.connectionStatus,
         sendMessage,
         markMessageDelivered,
         markMessageRead,

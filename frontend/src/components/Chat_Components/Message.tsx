@@ -1,6 +1,7 @@
 interface messageProps {
     type: string;
     msg: string;
+    status?: "pending" | "sent" | "delivered";
 }
 
 interface props {
@@ -13,7 +14,12 @@ const Message = ({ message, pfp }: props) => {
         return (
             <div className="self-end-safe flex">
                 <div className="border w-fit py-2 px-3 bg-retro_orange text-secondary rounded-b-lg rounded-tl-lg my-2 shadow max-w-[65vw] md:max-w-[25vw]">
-                    {message.msg}
+                    <div>{message.msg}</div>
+                    {message.status && (
+                        <div className="mt-1 text-[11px] opacity-70 text-right">
+                            {message.status}
+                        </div>
+                    )}
                 </div>
             </div>
         );

@@ -66,12 +66,12 @@ Modern WebSocket server with Redis-powered connection management for scalable re
 
 ## Features
 
--   ✅ **Redis-Powered**: Uses Upstash Redis for connection management
--   ✅ **Scalable**: Can handle multiple server instances
--   ✅ **Auto-Cleanup**: TTL-based connection cleanup (1 hour)
--   ✅ **Real-time**: Instant message delivery
--   ✅ **Persistent Status**: Online status survives server restarts
--   ✅ **JWT Authentication**: Secure token-based auth
+- ✅ **Redis-Powered**: Uses Upstash Redis for connection management
+- ✅ **Scalable**: Can handle multiple server instances
+- ✅ **Auto-Cleanup**: TTL-based connection cleanup (1 hour)
+- ✅ **Real-time**: Instant message delivery
+- ✅ **Persistent Status**: Online status survives server restarts
+- ✅ **JWT Authentication**: Secure token-based auth
 
 ## Setup
 
@@ -171,40 +171,53 @@ function sendMessage(recipientId, content) {
             type: "send_message",
             recipient_id: recipientId,
             content: content,
+            // Optional: idempotency key to prevent duplicates on retries
+            client_id: "<uuid>",
         })
     );
 }
+
+## Note on 1-to-1 chat sending
+
+This repo’s 1-to-1 chat UI primarily sends messages via the HTTP endpoint `POST /api/chat/send`.
+That path supports:
+
+- Offline-first UX (client queues locally when offline)
+- Backend queuing/retry when the recipient is offline
+- Optional `client_id` for idempotency/deduplication
+
+WebSocket `send_message` is still supported, but it’s best used for realtime-only flows or advanced clients.
 ```
 
 ## Benefits of Redis Integration
 
 ### 1. **Scalability**
 
--   Multiple server instances can share connection state
--   No single point of failure
--   Load balancing friendly
+- Multiple server instances can share connection state
+- No single point of failure
+- Load balancing friendly
 
 ### 2. **Persistence**
 
--   Online status survives server restarts
--   Connection info persists across deployments
--   TTL prevents stale connections
+- Online status survives server restarts
+- Connection info persists across deployments
+- TTL prevents stale connections
 
 ### 3. **Performance**
 
--   O(1) user lookups
--   Fast set operations for online users
--   Automatic cleanup with TTL
+- O(1) user lookups
+- Fast set operations for online users
+- Automatic cleanup with TTL
 
 ### 4. **Reliability**
 
--   Upstash provides 99.99% uptime
--   Built-in Redis clustering
--   Automatic failover
+- Upstash provides 99.99% uptime
+- Built-in Redis clustering
+- Automatic failover
 
 ## Production Considerations
 
--   **TTL Management**: Connections expire after 1 hour of inactivity
--   **Error Handling**: Graceful fallback if Redis is unavailable
--   **Memory Usage**: Redis stores minimal connection metadata
--   **Network**: Upstash Redis supports TLS encryption
+- **TTL Management**: Connections expire after 1 hour of inactivity
+- **Error Handling**: Graceful fallback if Redis is unavailable
+- **Memory Usage**: Redis stores minimal connection metadata
+- **Network**: Upstash Redis supports TLS encryption

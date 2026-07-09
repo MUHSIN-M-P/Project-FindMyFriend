@@ -5,6 +5,8 @@ import Message from "@/components/Chat_Components/Message";
 import EmojiButtonPicker from "@/components/Chat_Components/EmojiButton";
 import Image from "next/image";
 import back_arrow from "../../../public/icons/back_arrow.png";
+import { useOfflineMessages } from "@/hooks/useOfflineMessages";
+import { FiWifiOff, FiClock } from "react-icons/fi";
 
 interface MessageType {
     id: string;
@@ -50,6 +52,7 @@ export default function ChatArea({
     const [inputValue, setInputValue] = useState<string>("");
     const inputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const { isOnline } = useOfflineMessages();
 
     const handleSendMessage = () => {
         if (!inputValue.trim() || !selectedContact) return;
@@ -98,10 +101,18 @@ export default function ChatArea({
                     onClick={onProfileClick}
                 >
                     <p className="text-xl">{selectedContact.name}</p>
-                    <p>
+                    <p className="text-sm text-secondary/70">
                         {selectedContact.is_online ? "Online" : lastOnlineMsg}
                     </p>
                 </div>
+
+                {/* Offline/Pending Indicator */}
+                {!isOnline && (
+                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-retro_orange/20 text-secondary text-sm">
+                        <FiWifiOff className="w-4 h-4" />
+                        <span>Offline</span>
+                    </div>
+                )}
             </div>
 
             <div className="group h-[68vh] md:h-[71vh] overflow-y-scroll scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent px-5 flex flex-col-reverse">

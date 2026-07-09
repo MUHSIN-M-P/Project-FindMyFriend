@@ -10,90 +10,94 @@ A full-stack social networking platform exclusively for **NIT Calicut students**
 
 #### 🎯 **Personality Matching System**
 
--   Interactive questionnaire to determine user preferences and personality traits
--   Compatibility scoring algorithm to match students with similar interests
--   "Find Your Tribe" recommendations based on quiz responses
--   View potential friends' profiles with compatibility scores
+- Interactive questionnaire to determine user preferences and personality traits
+- Compatibility scoring algorithm to match students with similar interests
+- "Find Your Tribe" recommendations based on quiz responses
+- View potential friends' profiles with compatibility scores
+- Quiz answers are persisted per user and used to compute an explainable score (quiz similarity + shared hobbies)
 
 #### 💬 **Real-Time Chat System**
 
--   **WebSocket-powered messaging** for instant communication
--   Redis-backed online status tracking (using Upstash Cloud)
--   Real-time typing indicators and message status (sent/delivered/read)
--   Support for text messages with emoji picker
--   Conversation history with persistent storage
--   Contact list with online/offline status indicators
--   Unread message counters
+- **WebSocket-powered messaging** for instant communication
+- Redis-backed online status tracking (using Upstash Cloud)
+- Real-time typing indicators and message status (pending/sent/delivered/read)
+- Support for text messages with emoji picker
+- Conversation history with persistent storage
+- Contact list with online/offline status indicators
+- Unread message counters
+- Offline-first sending: messages are queued locally when offline and flushed when online
+- Idempotent send with `client_id` to prevent duplicates on retries
 
 #### 👤 **User Profiles**
 
--   Customizable profile with bio, age, gender, hobbies
--   Profile picture support (Google OAuth integration)
--   Social media links integration (Instagram, WhatsApp, GitHub)
--   Activity feed showing user interactions
--   "Top Questions" showcase on profiles
+- Customizable profile with bio, age, gender, hobbies
+- Profile picture support (Google OAuth integration)
+- Social media links integration (Instagram, WhatsApp, GitHub)
+- Activity feed showing user interactions
+- Activity feed is served by `GET /api/activity` and powers the existing "Your Activity" UI
+- "Top Questions" showcase on profiles
 
 #### 🔐 **Authentication & Security**
 
--   Google OAuth 2.0 integration (restricted to @nitc.ac.in emails)
--   JWT token-based authentication
--   Secure WebSocket authentication with separate token validation
--   Protected routes and API endpoints
+- Google OAuth 2.0 integration (restricted to @nitc.ac.in emails)
+- JWT token-based authentication
+- Secure WebSocket authentication with separate token validation
+- Protected routes and API endpoints
 
 #### 📱 **Responsive UI/UX**
 
--   Modern landing page with campus branding
--   Mobile-responsive layout
--   Bottom navigation bar for easy mobile access
--   Real-time UI updates without page refreshes
--   Smooth animations and transitions
+- Modern landing page with campus branding
+- Mobile-responsive layout
+- Bottom navigation bar for easy mobile access
+- Real-time UI updates without page refreshes
+- Smooth animations and transitions
 
 #### ⚡ **Technical Features**
 
--   RESTful API architecture
--   WebSocket server with connection pooling
--   Redis for distributed state management
--   PostgreSQL database with SQLAlchemy ORM
--   Database migrations with Alembic
--   Concurrent server management (Flask + WebSocket)
--   TypeScript for type-safe frontend development
+- RESTful API architecture
+- WebSocket server with connection pooling
+- Redis for distributed state management
+- PostgreSQL database with SQLAlchemy ORM
+- Database migrations with Alembic
+- Concurrent server management (Flask + WebSocket)
+- TypeScript for type-safe frontend development
 
 ## 🏗️ Technology Stack
 
 ### Backend
 
--   **Framework**: Flask (Python)
--   **Database**: PostgreSQL with SQLAlchemy ORM
--   **Real-time**: WebSocket server (websockets library)
--   **Cache/State**: Redis (Upstash Cloud)
--   **Authentication**:
-    -   Google OAuth 2.0 (Authlib)
-    -   JWT tokens (PyJWT)
-    -   Flask-Login for session management
--   **Migrations**: Alembic
--   **CORS**: Flask-CORS
+- **Framework**: Flask (Python)
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Real-time**: WebSocket server (websockets library)
+- **Cache/State**: Redis (Upstash Cloud)
+- **Authentication**:
+    - Google OAuth 2.0 (Authlib)
+    - JWT tokens (PyJWT)
+    - Flask-Login for session management
+- **Migrations**: Alembic
+- **CORS**: Flask-CORS
 
 ### Frontend
 
--   **Framework**: Next.js 15 (React 19)
--   **Language**: TypeScript
--   **Styling**: Tailwind CSS
--   **Icons**: React Icons
--   **WebSocket Client**: Native WebSocket API with custom hooks
+- **Framework**: Next.js 15 (React 19)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: React Icons
+- **WebSocket Client**: Native WebSocket API with custom hooks
 
 ### Infrastructure
 
--   **Concurrent Execution**: Runs Flask HTTP + WebSocket servers simultaneously
--   **Virtual Environment**: Python venv for dependency isolation
--   **Package Management**: npm for frontend, pip for backend
+- **Concurrent Execution**: Runs Flask HTTP + WebSocket servers simultaneously
+- **Virtual Environment**: Python venv for dependency isolation
+- **Package Management**: npm for frontend, pip for backend
 
 ## Getting Started
 
 ### Prerequisites
 
--   Node.js and npm installed
--   Python installed
--   Git installed
+- Node.js and npm installed
+- Python installed
+- Git installed
 
 ### Installation
 
@@ -123,21 +127,28 @@ A full-stack social networking platform exclusively for **NIT Calicut students**
     python -m pip install -r requirements.txt
     ```
 
+4. Run database migrations:
+
+    ```bash
+    cd backend
+    alembic upgrade head
+    ```
+
 ## Available Scripts
 
 ### Frontend
 
--   **`npm run frontend`**: Runs the Next.js frontend on port `3000`.
+- **`npm run frontend`**: Runs the Next.js frontend on port `3000`.
 
 ### Backend
 
--   **`npm run backend:win`**: Starts the Flask server on **Windows** using `app.py`.
--   **`npm run backend:linux`**: Starts the Flask server on **Linux/macOS** using `app.py`.
+- **`npm run backend:win`**: Starts the Flask server on **Windows** using `app.py`.
+- **`npm run backend:linux`**: Starts the Flask server on **Linux/macOS** using `app.py`.
 
 ### Full-Stack Development
 
--   **`npm run dev:win`**: Runs both the frontend and backend concurrently on **Windows**.
--   **`npm run dev:linux`**: Runs both the frontend and backend concurrently on **Linux/macOS**.
+- **`npm run dev:win`**: Runs both the frontend and backend concurrently on **Windows**.
+- **`npm run dev:linux`**: Runs both the frontend and backend concurrently on **Linux/macOS**.
 
 ## 📂 Project Structure
 
@@ -220,30 +231,40 @@ FLASK_APP=run.py
 
 The application uses a sophisticated WebSocket implementation for real-time features:
 
--   **Separate WebSocket server** running on port 8765
--   **Redis-powered connection management** for scalability
--   **JWT authentication** for secure connections
--   **Automatic reconnection** on connection loss
--   **Online status tracking** with TTL-based cleanup
--   **Message delivery status** (sent, delivered, read)
--   **Typing indicators** for active conversations
+- **Separate WebSocket server** running on port 8765
+- **Redis-powered connection management** for scalability
+- **JWT authentication** for secure connections
+- **Automatic reconnection** on connection loss
+- **Online status tracking** with TTL-based cleanup
+- **Message delivery status** (sent, delivered, read)
+- **Typing indicators** for active conversations
+
+#### Offline-first outgoing messages
+
+For 1-to-1 chat, the frontend sends messages via the HTTP endpoint `POST /api/chat/send`.
+
+- If the browser is offline, the frontend queues the message locally and shows it as `pending`.
+- When the browser comes back online, queued messages are flushed automatically.
+- The backend accepts an optional `client_id` for idempotency (dedupe on retries/flush).
+
+**Demo tip**: In Chrome DevTools → Network → set “Offline”, send a message (shows `pending`), then switch back online (flush + status updates).
 
 ### Chat Features
 
--   **Contact list** with search functionality
--   **Conversation threads** with message history
--   **Real-time message delivery**
--   **Emoji picker** for expressive messaging
--   **Unread message badges**
--   **Last seen status** for offline users
--   **Profile quick view** from contact list
+- **Contact list** with search functionality
+- **Conversation threads** with message history
+- **Real-time message delivery**
+- **Emoji picker** for expressive messaging
+- **Unread message badges**
+- **Last seen status** for offline users
+- **Profile quick view** from contact list
 
 ### Matching Algorithm
 
--   Questionnaire-based personality assessment
--   Compatibility scoring based on shared interests
--   Best match recommendations
--   Profile discovery with filtering options
+- Questionnaire-based personality assessment
+- Compatibility scoring based on shared interests
+- Best match recommendations
+- Profile discovery with filtering options
 
 ## Contributing
 

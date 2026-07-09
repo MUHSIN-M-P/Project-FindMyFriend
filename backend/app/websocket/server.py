@@ -451,6 +451,7 @@ async def handle_message(websocket, sender_id: int, message_data: dict):
         recipient_id = message_data.get("recipient_id")
         content = message_data.get("content")
         msg_type = message_data.get("message_type", "text")
+        client_id = message_data.get("client_id")
         
         if not recipient_id or not content:
             return
@@ -462,7 +463,14 @@ async def handle_message(websocket, sender_id: int, message_data: dict):
         try:
             if flask_app is not None:
                 with flask_app.app_context():
-                    message = ChatService.send_message(sender_id, recipient_id, content, msg_type)
+                    message = ChatService.send_message(
+                        sender_id,
+                        recipient_id,
+                        content,
+                        msg_type,
+                        client_id=client_id,
+                        mark_delivered=True,
+                    )
                     sender = db.session.get(User, sender_id)
                     sender_pfp = sender.profile_pic if sender and sender.profile_pic else "/avatars/male_avatar.png"
                     
@@ -475,9 +483,17 @@ async def handle_message(websocket, sender_id: int, message_data: dict):
                         "created_at": message.created_at.isoformat(),
                         "message_type": msg_type,
                         "pfp": sender_pfp,
+                        "client_id": client_id,
                     }
             else:
-                message = ChatService.send_message(sender_id, recipient_id, content, msg_type)
+                message = ChatService.send_message(
+                    sender_id,
+                    recipient_id,
+                    content,
+                    msg_type,
+                    client_id=client_id,
+                    mark_delivered=True,
+                )
                 sender = db.session.get(User, sender_id)
                 sender_pfp = sender.profile_pic if sender and sender.profile_pic else "/avatars/male_avatar.png"
                 
@@ -490,6 +506,7 @@ async def handle_message(websocket, sender_id: int, message_data: dict):
                     "created_at": message.created_at.isoformat(),
                     "message_type": msg_type,
                     "pfp": sender_pfp,
+                    "client_id": client_id,
                 }
         except Exception as e:
             print(f"Error persisting WS message {sender_id}->{recipient_id}: {e}")

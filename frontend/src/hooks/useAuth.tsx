@@ -7,6 +7,7 @@ import {
     useContext,
     type ReactNode,
 } from "react";
+import { apiGet, BACKEND_URL } from "@/utils/api";
 
 interface User {
     id: number;
@@ -36,13 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fetchUser = async () => {
         try {
-            const backendUrl =
-                process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-            const response = await fetch(`${backendUrl}/api/auth/me`, {
-                credentials: "include",
-            });
+            const response = await apiGet("/api/auth/me");
 
-            setUser(response.ok ? await response.json() : null);
+            if (response.status === 200 && response.data) {
+                setUser(response.data);
+            } else {
+                setUser(null);
+            }
         } catch (error) {
             console.error("Error fetching the User: ", error);
             setUser(null);
@@ -57,9 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
-            const backendUrl =
-                process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-            await fetch(`${backendUrl}/logout`, { credentials: "include" });
+            await fetch(`${BACKEND_URL}/logout`, { credentials: "include" });
         } catch (error) {
             console.error("Logout error: ", error);
         } finally {

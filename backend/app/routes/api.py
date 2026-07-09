@@ -1,10 +1,15 @@
 from flask import jsonify, request
 from app import app
-from app.models import User, db
+from app.models import User, MessageStatus, db
 from app.services.chat_service import ChatService
 from app.services.auth_service import AuthService
+from app.services.message_queue_service import get_message_queue_service
+from app.services.matching_service import MatchingService
+from app.services.activity_service import ActivityService
 from app.utils.decorators import authenticate_user, jwt_required
 from sqlalchemy import select
+from sqlalchemy import func, and_
+import json
 
 @app.route("/")
 def hello():
@@ -190,6 +195,30 @@ def get_chat_contacts():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/api/chat/unread-count', methods=['GET'])
+@jwt_required
+def get_unread_message_count():
+    """Get total unread 1-to-1 message count for current user."""
+    try:
+        user_id = request.jwt_user.id
+
+        count = (
+            db.session.execute(
+                select(func.count(MessageStatus.id)).where(
+                    and_(
+                        MessageStatus.recipient_id == user_id,
+                        MessageStatus.status.in_(["sent", "delivered"]),
+                    )
+                )
+            ).scalar()
+            or 0
+        )
+
+        return jsonify({"count": int(count)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/chat/conversation/<int:user_id>', methods=['GET'])
 @jwt_required
 def get_chat_conversation(user_id):
@@ -203,6 +232,22 @@ def get_chat_conversation(user_id):
             current_user_id, user_id, page, per_page
         )
         return jsonify(messages)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/chat/conversation/<int:user_id>/read', methods=['POST'])
+@jwt_required
+def mark_chat_conversation_read(user_id: int):
+    """Mark all unread messages from a specific user as read."""
+    try:
+        current_user_id = request.jwt_user.id
+        conversation = ChatService.get_or_create_conversation(current_user_id, user_id)
+        ChatService.mark_conversation_messages_as_read(conversation.id, current_user_id)
+        return jsonify({
+            "success": True,
+            "conversation_id": conversation.id,
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -225,53 +270,95 @@ def get_chat_user_profile(user_id):
 @app.route('/api/chat/send', methods=['POST'])
 @jwt_required
 def send_chat_message():
-    """Send a message to another user"""
+    """
+    Send a message to another user
+    Backend handles encryption, queuing, and retry logic
+    """
     try:
         data = request.get_json()
-        recipient_id = data.get('recipient_id')
+        recipient_id = data.get('recipient_id') or data.get('receiver_id')  # Support both keys
         content = data.get('content')
         message_type = data.get('message_type', 'text')
+        client_id = data.get('client_id')
         
         if not recipient_id or not content:
             return jsonify({"error": "Recipient ID and content are required"}), 400
-            
-        message = ChatService.send_message(request.jwt_user.id, recipient_id, content, message_type)
-
-        # Push live update to recipient over WebSocket (best-effort).
-        try:
-            from app.websocket.server import schedule_send_to_user
-
-            # Get sender's profile picture
-            sender_pfp = request.jwt_user.profile_pic or "/avatars/male_avatar.png"
-
-            schedule_send_to_user(
-                int(recipient_id),
-                {
-                    "type": "new_message",
-                    "data": {
-                        "id": message.id,
-                        "sender_id": request.jwt_user.id,
-                        "recipient_id": int(recipient_id),
-                        "conversation_id": message.conversation_id,
-                        "content": message.content,
-                        "created_at": message.created_at.isoformat(),
-                        "message_type": message.message_type,
-                        "pfp": sender_pfp,
-                    },
-                },
-            )
-        except Exception:
-            # Don't fail the HTTP request if WS delivery isn't available.
-            pass
         
-        if message:
+        recipient_id = int(recipient_id)
+        
+        # Get or create conversation
+        conversation = ChatService.get_or_create_conversation(
+            request.jwt_user.id,
+            recipient_id
+        )
+        
+        # Try immediate delivery (if user is online)
+        from app.websocket.redis_manager import redis_manager
+        is_online = redis_manager.is_user_online(recipient_id)
+        
+        if is_online:
+            # Save to database immediately
+            message = ChatService.send_message(
+                request.jwt_user.id,
+                recipient_id,
+                content,
+                message_type,
+                client_id=client_id,
+                mark_delivered=True,
+            )
+            
+            # Send via WebSocket (best-effort)
+            try:
+                from app.websocket.server import schedule_send_to_user
+                sender_pfp = request.jwt_user.profile_pic or "/avatars/male_avatar.png"
+
+                schedule_send_to_user(
+                    recipient_id,
+                    {
+                        "type": "new_message",
+                        "data": {
+                            "id": message.id,
+                            "sender_id": request.jwt_user.id,
+                            "recipient_id": recipient_id,
+                            "conversation_id": message.conversation_id,
+                            "content": message.content,
+                            "created_at": message.created_at.isoformat(),
+                            "message_type": message.message_type,
+                            "pfp": sender_pfp,
+                        },
+                    },
+                )
+            except Exception as e:
+                print(f"WebSocket delivery failed: {e}")
+                # Message is queued, will retry
+            
             return jsonify({
                 "success": True,
                 "message_id": message.id,
-                "timestamp": message.created_at.isoformat()
+                "timestamp": message.created_at.isoformat(),
+                "status": "delivered",
+                "client_id": client_id,
             })
         else:
-            return jsonify({"error": "Failed to send message"}), 500
+            # User offline - message is queued and will be retried
+            queue_service = get_message_queue_service()
+            message_queue_id = queue_service.queue_message(
+                sender_id=request.jwt_user.id,
+                recipient_id=recipient_id,
+                content=content,
+                conversation_id=conversation.id,
+                message_type=message_type,
+                is_room=False,
+                client_id=client_id,
+            )
+            return jsonify({
+                "success": True,
+                "message_queue_id": message_queue_id,
+                "status": "queued",
+                "message": "Recipient offline. Message queued for delivery.",
+                "client_id": client_id,
+            })
+            
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -297,5 +384,56 @@ def get_chat_online_users():
     try:
         online_users = ChatService.get_online_contacts(request.jwt_user.id)
         return jsonify(online_users)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/quiz/answers', methods=['POST'])
+@jwt_required
+def save_quiz_answers():
+    """Save quiz answers for the current user (used by matchmaking).
+
+    Expected body: { "answers": {"1": 2, "2": 4, ...} }
+    """
+    try:
+        data = request.get_json() or {}
+        answers = data.get('answers')
+        if not isinstance(answers, dict):
+            return jsonify({"error": "answers must be an object"}), 400
+
+        user = db.session.get(User, request.jwt_user.id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        user.quiz_answers = json.dumps(answers)
+        db.session.commit()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/find/matches', methods=['GET'])
+@jwt_required
+def get_find_matches():
+    """Return deterministic, explainable matches for the Find tab."""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        limit = max(1, min(limit, 50))
+        results = MatchingService.get_matches_for_user(request.jwt_user.id, limit=limit)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/activity', methods=['GET'])
+@jwt_required
+def get_activity_notifications():
+    """Return a lightweight activity feed for the current user."""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        limit = max(1, min(limit, 50))
+        notifications = ActivityService.get_notifications(request.jwt_user.id, limit=limit)
+        return jsonify({"notifications": notifications})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

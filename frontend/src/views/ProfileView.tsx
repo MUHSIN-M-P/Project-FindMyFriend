@@ -8,6 +8,7 @@ import QuestionCard from "@/components/questionCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import OnboardingModal from "@/components/OnboardingModal";
+import { FiSettings } from "react-icons/fi";
 
 interface ProfileViewProps {
     userId?: number;
@@ -122,9 +123,9 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                       currentUser.profile_pic || "/avatars/male_avatar.png",
                   score: -1,
                   bestMatch: false,
-                  social_links: Array.isArray(currentUser.social_links)
-                      ? currentUser.social_links.filter(
-                            (l) => l.link && l.link.trim() !== ""
+                  social_links: Array.isArray((currentUser as any).social_links)
+                      ? (currentUser as any).social_links.filter(
+                            (l: any) => l.link && l.link.trim() !== "",
                         )
                       : [],
                   topQuestions: placeholderUser.topQuestions,
@@ -158,7 +159,7 @@ export default function ProfileView({ userId }: ProfileViewProps) {
         },
     };
     const notifications = notifications_res.data.notifications;
-    console.log(user.social_links)
+    console.log(user.social_links);
     return (
         <div className="flex h-full max-w-[1720px] w-full justify-center font-poppins px-5 md:px-10 xl:px-20 pb-20">
             <div className="lhs w-full lg:w-[65vw] px-5 max-sm:px-0! pb-5 flex flex-col gap-5 items-center border-t-3 lg:border-3 border-r-0! border-retro_border">
@@ -176,7 +177,12 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                     </div>
                     <div className="userInfo w-full flex flex-col gap-2 mb-2 md:mb-0">
                         <div className="intro_title font-semibold text-[22px] max-md:text-center">
-                            {user.name} | {user.age} {user.gender}
+                            {user.name} | {user.age}{" "}
+                            {user.gender === "M"
+                                ? "👦🏻"
+                                : user.gender === "F"
+                                  ? "👧🏻"
+                                  : user.gender}
                         </div>
                         <div className="Hobbies flex gap-2 lg:gap-3 text-secondary flex-wrap max-md:justify-center ">
                             {user.hobbies.map((hobby, index) => (
@@ -202,10 +208,18 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                 </div>
 
                 <div className="text-secondary text-[22px] text-left w-full flex flex-col gap-3 items-center">
-                    <div className="flex flex-row justify-between w-full">
-                        About me
+                    <div className="flex flex-row justify-between w-full items-center">
+                        <span>About me</span>
+                        <RetroButton
+                            text="Settings"
+                            icon={<FiSettings size={18} />}
+                            onClick={() => setShowSettings(true)}
+                            isActive={true}
+                            msgNo={0}
+                            extraClass="ml-2 px-3 py-1 text-[15px] h-8 min-h-0 min-w-0"
+                        />
                     </div>
-                    <div className="desc text-[16px] w-full px-4 text-justify!">
+                    <div className="desc text-[16px] w-full pl-0 text-justify">
                         {user.desc}
                     </div>
                 </div>
@@ -213,7 +227,7 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                 <div className="w-full flex flex-row flex-wrap gap-2 justify-around items-center">
                     {user.social_links &&
                         user.social_links.length > 0 &&
-                        user.social_links.map((link, idx) => {
+                        user.social_links.map((link: any, idx: number) => {
                             let icon = "/icons/link.svg";
                             if (link.name.toLowerCase().includes("insta"))
                                 icon = "/icons/instagram.svg";
@@ -242,23 +256,7 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                             );
                         })}
                 </div>
-                <RetroButton
-                    text="Settings"
-                    icon={"/icons/settings.svg"}
-                    onClick={() => setShowSettings(true)}
-                    isActive={showSettings}
-                    msgNo={0}
-                    extraClass="mx-0!"
-                />
-
-                <div className="topQuestions text-secondary text-[22px] text-left w-full flex flex-col gap-3 items-start pt-10">
-                    Top Questions
-                    <div className="flex flex-col w-full items-center gap-5 mt-2">
-                        {user.topQuestions.map((question, index) => (
-                            <QuestionCard key={index} question={question} />
-                        ))}
-                    </div>
-                </div>
+                {/* Settings button moved above next to About me */}
             </div>
 
             {isOwnProfile && currentUser && isEditingProfile && (
@@ -281,7 +279,7 @@ export default function ProfileView({ userId }: ProfileViewProps) {
                 }`}
             >
                 {showSettings ? (
-                    <SettingsView />
+                    <SettingsView onClose={() => setShowSettings(false)} />
                 ) : (
                     <YourActivity notifications={notifications} />
                 )}
