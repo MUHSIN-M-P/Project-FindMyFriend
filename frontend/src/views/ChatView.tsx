@@ -373,7 +373,7 @@ export default function ChatView() {
         if (!messageContent.trim() || !selectedContact) return;
 
         const clientId =
-            // @ts-expect-error - older TS libs may not have randomUUID typed
+            // @ts-ignore - older TS libs may not have randomUUID typed
             globalThis.crypto?.randomUUID?.() ||
             `cid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 

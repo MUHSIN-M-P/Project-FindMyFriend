@@ -159,7 +159,7 @@ export default function PrivateRoomsView() {
                 activeRoomCode, // roomCode
             );
 
-            if (result.status === "queued") {
+            if (result.status === "pending") {
                 console.log("Room message queued for later delivery");
             }
         } catch (error) {

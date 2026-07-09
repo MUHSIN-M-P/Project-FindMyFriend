@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { apiPost } from "@/utils/api";
 
 interface Message {
     id: string;
@@ -127,16 +128,16 @@ class SharedWebSocketManager {
         this.setSnapshot({ connectionStatus: "connecting" });
 
         try {
-            // Get WebSocket token from backend using HttpOnly cookie
-            const tokenResponse = await fetch("/api/auth/websocket-token", {
-                method: "POST",
-            });
+            // Get WebSocket token directly from backend using HttpOnly cookie
+            const tokenResponse = await apiPost<{ token: string; websocket_url?: string }>(
+                "/api/websocket/token",
+            );
 
-            if (!tokenResponse.ok) {
+            if (tokenResponse.error || !tokenResponse.data) {
                 throw new Error("Failed to get WebSocket token");
             }
 
-            const tokenData = await tokenResponse.json();
+            const tokenData = tokenResponse.data;
             const wsToken = tokenData.token;
             const wsUrl =
                 tokenData.websocket_url ||
@@ -343,9 +344,9 @@ export function useWebSocket({
     autoConnect = true,
     disconnectOnUnmount = false,
 }: UseWebSocketProps) {
-    const onNewMessageRef = useRef<UseWebSocketProps["onNewMessage"]>();
-    const onContactUpdateRef = useRef<UseWebSocketProps["onContactUpdate"]>();
-    const onRoomEventRef = useRef<UseWebSocketProps["onRoomEvent"]>();
+    const onNewMessageRef = useRef<UseWebSocketProps["onNewMessage"]>(undefined);
+    const onContactUpdateRef = useRef<UseWebSocketProps["onContactUpdate"]>(undefined);
+    const onRoomEventRef = useRef<UseWebSocketProps["onRoomEvent"]>(undefined);
 
     const [snapshot, setSnapshot] = useState<Snapshot>(() => manager.getSnapshot());
 

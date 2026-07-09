@@ -33,7 +33,10 @@ export function useOfflineMessages(options?: UseOfflineMessagesOptions) {
 
     useEffect(() => {
         if (!options?.onStatusUpdate) return;
-        return offlineMessageHandler.subscribe(options.onStatusUpdate);
+        const unsubscribe = offlineMessageHandler.subscribe(options.onStatusUpdate);
+        return () => {
+            unsubscribe();
+        };
     }, [options?.onStatusUpdate]);
 
     const sendMessage = useCallback(
