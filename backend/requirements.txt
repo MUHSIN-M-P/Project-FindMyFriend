@@ -4,9 +4,12 @@ Flask
 flask-cors
 Flask-Login
 Flask-SQLAlchemy
+gunicorn
+psycopg2-binary
 PyJWT
 python-dotenv
 redis
+requests
 SQLAlchemy
 websockets
 cryptography

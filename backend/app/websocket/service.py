@@ -6,6 +6,13 @@ from app.websocket import server as websocket_server
 from app.websocket.redis_manager import redis_manager
 import os
 
+
+def _env_flag_false(name: str) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return False
+    return value.strip().lower() in {"0", "false", "no", "off"}
+
 class WebSocketService:    
     def __init__(self):
         self.server_thread: Optional[threading.Thread] = None
@@ -46,6 +53,13 @@ websocket_service = WebSocketService()
 
 def init_websocket_service(app=None):
     """Initialize WebSocket service - starts automatically with Flask"""
+    # Render deployment note:
+    # Render exposes exactly one public PORT per service. This repo runs HTTP (Flask)
+    # and WebSockets (python-websockets) on different ports, so production deployments
+    # typically run WebSockets as a separate Render service.
+    if _env_flag_false("WEBSOCKET_AUTOSTART") or _env_flag_false("DISABLE_WEBSOCKET_AUTOSTART"):
+        return websocket_service
+
     # Werkzeug debug reloader runs your app twice (parent + child).
     # Starting the WS server in both causes port bind conflicts and no realtime updates.
     if os.getenv("FLASK_ENV") != "production":

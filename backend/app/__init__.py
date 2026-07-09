@@ -60,7 +60,8 @@ def _select_database_uri() -> str:
     return env_url
 
 
-app.config["SQLALCHEMY_DATABASE_URI"] = _select_database_uri()
+database_url = _select_database_uri()
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
 app.config["GOOGLE_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
@@ -70,8 +71,11 @@ app.config["GOOGLE_DISCOVERY_URL"] = os.getenv("GOOGLE_DISCOVERY_URL", "https://
 db.init_app(app)
 
 # Get allowed frontend origins from environment (comma-separated for multiple domains)
-allowed_origins = os.getenv("FRONTEND_URL", "http://localhost:3000").split(",")
-allowed_origins.extend(["http://127.0.0.1:3000"])  # Always allow localhost for dev
+allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+for env_var in ["FRONTEND_URL", "CORS_ORIGINS"]:
+    val = os.getenv(env_var, "")
+    if val:
+        allowed_origins.extend([o.strip() for o in val.split(",") if o.strip()])
 
 CORS(app, resources={
     r"/*": {
@@ -96,5 +100,13 @@ if not _is_alembic_context():
     from app.websocket.service import init_websocket_service
     init_websocket_service(app)
 
-# NOTE: Avoid connecting to the DB at import/startup time.
+    # Create tables automatically for production/Render if needed
+    if database_url and not database_url.startswith("sqlite"):
+        with app.app_context():
+            try:
+                db.create_all()
+            except Exception as e:
+                print(f"[WARN] Could not create tables on startup: {e}")
+
+# NOTE: Avoid connecting to the DB at import/startup time in migrations.
 # Use Alembic migrations (`alembic upgrade head`) to create/update schema.
