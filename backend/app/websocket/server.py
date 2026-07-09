@@ -519,7 +519,7 @@ async def handle_message(websocket, sender_id: int, message_data: dict):
                 "data": message_payload
             })
 
-async def websocket_handler(websocket, path):
+async def websocket_handler(websocket, path=None):
     user_id = None
     
     try:
