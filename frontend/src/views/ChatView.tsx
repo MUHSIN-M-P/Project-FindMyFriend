@@ -372,9 +372,9 @@ export default function ChatView() {
     const handleSendMessage = async (messageContent: string) => {
         if (!messageContent.trim() || !selectedContact) return;
 
+        const cryptoObj = globalThis.crypto as any;
         const clientId =
-            // @ts-ignore - older TS libs may not have randomUUID typed
-            globalThis.crypto?.randomUUID?.() ||
+            cryptoObj?.randomUUID?.() ||
             `cid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
         const tempMessage: MessageType = {

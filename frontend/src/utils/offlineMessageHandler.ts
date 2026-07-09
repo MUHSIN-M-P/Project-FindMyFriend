@@ -41,9 +41,9 @@ function safeParseJson<T>(value: string | null): T | null {
 function generateClientId(): string {
     // Prefer built-in UUID when available
     try {
-        // @ts-ignore - older TS libs may not have randomUUID typed
-        if (globalThis.crypto?.randomUUID)
-            return globalThis.crypto.randomUUID();
+        const cryptoObj = globalThis.crypto as any;
+        if (cryptoObj?.randomUUID)
+            return cryptoObj.randomUUID();
     } catch {
         // ignore
     }
