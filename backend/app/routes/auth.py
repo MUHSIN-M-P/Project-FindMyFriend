@@ -92,8 +92,8 @@ def login():
                 'auth_token',
                 api_token,
                 httponly=True,  # Prevents JavaScript access
-                secure=os.getenv('FLASK_ENV') == 'production',  # HTTPS only in production
-                samesite='Lax',  # CSRF protection
+                secure=True,  # HTTPS required for SameSite=None
+                samesite='None',  # Allow cross-subdomain on Render
                 max_age=60*60*24,  # 24 hours
                 path='/'
             )
