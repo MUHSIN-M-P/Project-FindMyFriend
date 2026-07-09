@@ -83,11 +83,17 @@ def login():
             
             api_token = jwt.encode(jwt_payload, secret_key, algorithm="HS256")
 
-            # Create response with HttpOnly cookie
+            # Create response with HttpOnly cookie and token in redirect URL for SPA (Render cross-origin)
             frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-            response = make_response(redirect(frontend_url))
+            redirect_url = frontend_url
+            if "?" in redirect_url:
+                redirect_url += f"&token={api_token}"
+            else:
+                redirect_url += f"?token={api_token}"
+                
+            response = make_response(redirect(redirect_url))
             
-            # Set HttpOnly, Secure cookie
+            # Set HttpOnly, Secure cookie (keeps working locally or if same-domain)
             response.set_cookie(
                 'auth_token',
                 api_token,
@@ -110,38 +116,22 @@ def login():
         return google.authorize_redirect(redirect_uri)
 
 @app.route("/api/auth/me", methods=['GET'])
+@jwt_required
 def get_current_user():
-    """Get current user info from cookie"""
-    auth_cookie = request.cookies.get('auth_token')
+    """Get current user info"""
+    user = request.jwt_user
     
-    if not auth_cookie:
-        return jsonify({"error": "Not authenticated"}), 401
-    
-    try:
-        secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
-        payload = jwt.decode(auth_cookie, secret_key, algorithms=["HS256"])
-        user_id = payload.get("user_id")
-        
-        user = db.get_or_404(User, user_id)
-        
-        return jsonify({
-            "id": user.id,
-            "email": user.email,
-            "username": user.username,
-            "name": user.username,
-            "profile_pic": user.profile_pic,
-            "age": user.age,
-            "sex": user.sex,
-            "hobbies": user.hobbies.split(",") if user.hobbies else [],
-            "bio": user.bio
-        }), 200
-        
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Invalid token"}), 401
-    except Exception as e:
-        return jsonify({"error": "Authentication failed"}), 401
+    return jsonify({
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "name": user.username,
+        "profile_pic": user.profile_pic,
+        "age": user.age,
+        "sex": user.sex,
+        "hobbies": user.hobbies.split(",") if user.hobbies else [],
+        "bio": user.bio
+    }), 200
 
 @app.route("/logout")
 def logout():

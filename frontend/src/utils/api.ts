@@ -28,10 +28,18 @@ async function apiRequest<T = any>(
     const { skipAuth = false, ...fetchOptions } = options;
 
     // Default headers
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...fetchOptions.headers,
+        ...((fetchOptions.headers || {}) as Record<string, string>),
     };
+
+    // Add JWT token from localStorage if present
+    if (typeof window !== "undefined") {
+        const token = localStorage.getItem("auth_token");
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+    }
 
     // Cookies are automatically sent with credentials: "include"
     const config: RequestInit = {

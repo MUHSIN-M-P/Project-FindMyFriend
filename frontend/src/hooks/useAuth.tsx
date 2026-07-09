@@ -57,15 +57,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        if (typeof window !== "undefined") {
+            const searchParams = new URLSearchParams(window.location.search);
+            const token = searchParams.get("token");
+            if (token) {
+                localStorage.setItem("auth_token", token);
+                // Remove the token from URL so it doesn't linger or get shared
+                const url = new URL(window.location.href);
+                url.searchParams.delete("token");
+                window.history.replaceState({}, document.title, url.pathname + url.search);
+            }
+        }
         fetchUser();
     }, []);
 
     const logout = async () => {
         try {
-            await fetch(`${BACKEND_URL}/logout`, { credentials: "include" });
+            const token = localStorage.getItem("auth_token");
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+            await fetch(`${BACKEND_URL}/logout`, { 
+                method: "GET",
+                headers,
+                credentials: "include" 
+            });
         } catch (error) {
             console.error("Logout error: ", error);
         } finally {
+            localStorage.removeItem("auth_token");
             setUser(null);
             window.location.href = "/";
         }
